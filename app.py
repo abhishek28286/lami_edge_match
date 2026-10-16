@@ -5,6 +5,9 @@ from flask_cors import CORS
 import pickle
 
 app = Flask(__name__)
+@app.route('/')
+def home():
+    return "Flazzor Interior API is Live and Running! 🚀"
 CORS(app)
 
 loaded_laminates_index = {}
