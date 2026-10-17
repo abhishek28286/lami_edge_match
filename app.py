@@ -69,6 +69,27 @@ def get_brands():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# NEW ROUTE: Fetching laminate list/codes for a selected brand in Edge Banding tool
+@app.route('/get_laminate_list', methods=['GET'])
+def get_laminate_list():
+    brand = request.args.get('brand')
+    if not brand:
+        return jsonify({'error': 'Brand is required'}), 400
+    try:
+        brand_items = [
+            {
+                'filename': item.get('filename'),
+                'name': item.get('name'),
+                'brand': item.get('brand'),
+                'category': item.get('category', 'solid')
+            }
+            for item in loaded_all_laminates 
+            if item.get('brand') == brand
+        ]
+        return jsonify({'items': brand_items}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
     filename = request.args.get('filename')
