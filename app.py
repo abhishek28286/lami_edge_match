@@ -3,10 +3,11 @@ import pickle
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify, redirect
-from flask_cors import CORS  # <--- Yeh line jodein
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # <--- Yeh line jodein
+CORS(app)
+
 # Google Drive Folder IDs
 LAMINATE_DRIVE_FOLDER_ID = "1q1M2-lEpIB6nNnW-A9q6T-AqQLgZ3MyK"
 EDGE_DRIVE_FOLDER_ID = "1OIk4KhArNCZkFfw9L4ccBNOBZsoSmWar"
@@ -19,22 +20,30 @@ loaded_edge_swatches = []
 def load_data():
     global loaded_laminates_index, laminate_folders, loaded_all_laminates, loaded_edge_swatches
     
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    lam_path = os.path.join(base_dir, 'laminates_index.pkl')
+    edge_path = os.path.join(base_dir, 'edge_swatches_index.pkl')
+    
     try:
-        if os.path.exists('laminates_index.pkl'):
-            with open('laminates_index.pkl', 'rb') as f:
+        if os.path.exists(lam_path):
+            with open(lam_path, 'rb') as f:
                 data = pickle.load(f)
                 loaded_laminates_index = data.get('index', {})
                 laminate_folders = data.get('folders', {})
                 loaded_all_laminates = data.get('all_laminates', [])
                 print(f"Loaded {len(loaded_all_laminates)} laminates.")
+        else:
+            print(f"Laminates pkl not found at {lam_path}")
     except Exception as e:
         print(f"Error loading laminates index: {e}")
 
     try:
-        if os.path.exists('edge_swatches_index.pkl'):
-            with open('edge_swatches_index.pkl', 'rb') as f:
+        if os.path.exists(edge_path):
+            with open(edge_path, 'rb') as f:
                 loaded_edge_swatches = pickle.load(f)
                 print(f"Loaded {len(loaded_edge_swatches)} edge swatches.")
+        else:
+            print(f"Edge swatches pkl not found at {edge_path}")
     except Exception as e:
         print(f"Error loading edge swatches index: {e}")
 
@@ -48,7 +57,6 @@ def home():
         "swatches_loaded": len(loaded_edge_swatches)
     }), 200
 
-# API to provide available brands for dropdowns in Flutter app
 @app.route('/get_brands', methods=['GET'])
 def get_brands():
     try:
@@ -65,7 +73,6 @@ def get_brands():
 def get_laminate_image():
     filename = request.args.get('filename')
     if filename:
-        # Direct folder redirection or direct view link
         folder_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
         return redirect(folder_url, code=302)
     return "Image not found", 404
