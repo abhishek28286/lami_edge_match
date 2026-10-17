@@ -3,9 +3,10 @@ import pickle
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify, redirect
+from flask_cors import CORS  # <--- Yeh line jodein
 
 app = Flask(__name__)
-
+CORS(app)  # <--- Yeh line jodein
 # Google Drive Folder IDs
 LAMINATE_DRIVE_FOLDER_ID = "1q1M2-lEpIB6nNnW-A9q6T-AqQLgZ3MyK"
 EDGE_DRIVE_FOLDER_ID = "1OIk4KhArNCZkFfw9L4ccBNOBZsoSmWar"
