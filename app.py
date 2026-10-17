@@ -1,14 +1,14 @@
 ﻿import os
-import numpy as np
-from flask import Flask, request, jsonify, send_file
-from flask_cors import CORS
 import pickle
+import cv2
+import numpy as np
+from flask import Flask, request, jsonify, redirect
 
 app = Flask(__name__)
-@app.route('/')
-def home():
-    return "Flazzor Interior API is Live and Running! 🚀"
-CORS(app)
+
+# Google Drive Folder IDs
+LAMINATE_DRIVE_FOLDER_ID = "1q1M2-lEpIB6nNnW-A9q6T-AqQLgZ3MyK"
+EDGE_DRIVE_FOLDER_ID = "1OIk4KhArNCZkFfw9L4ccBNOBZsoSmWar"
 
 loaded_laminates_index = {}
 laminate_folders = {}
@@ -59,32 +59,34 @@ def get_laminate_list():
         
     return jsonify({'items': []}), 200
 
+# Google Drive से सीधा रीडायरेक्ट करने के लिए अपडेटेड रूट (Laminate Image)
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
     brand = request.args.get('brand')
     category = request.args.get('category', 'solid')
     filename = request.args.get('filename')
-    if brand in laminate_folders and filename:
-        cats = [category, 'solid', 'texture']
-        for cat in cats:
-            if cat in laminate_folders[brand]:
-                img_path = os.path.join(laminate_folders[brand][cat], filename)
-                if os.path.exists(img_path):
-                    return send_file(img_path, mimetype='image/jpeg')
+    
+    # चूंकि फाइलें Google Drive पर फोल्डर स्ट्रक्चर में हैं, हम चाहें तो डायरेक्ट Google Drive का फोल्डर व्यू लिंक दे सकते हैं 
+    # या फिर पिकल फाइल में सेव फाइलनेम के आधार पर गूगल ड्राइव प्रीव्यू लिंक भेज सकते हैं।
+    if filename:
+        # अगर आपके पास गूगल ड्राइव फाइल की डायरेक्ट आईडी है या आप जनरल व्यू लिंक देना चाहते हैं:
+        # यहाँ हम Google Drive का सर्च/व्यू लिंक या डायरेक्ट लिंक रिटर्न कर रहे हैं
+        drive_view_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
+        return redirect(drive_view_url, code=302)
+        
     return "Image not found", 404
 
+# Google Drive से सीधा रीडायरेक्ट करने के लिए अपडेटेड रूट (Edge Swatch Image)
 @app.route('/get_swatch_image', methods=['GET'])
 def get_swatch_image():
     brand = request.args.get('brand')
     category = request.args.get('category', 'solid')
     filename = request.args.get('filename')
     
-    for swatch in loaded_edge_swatches:
-        if swatch['brand'] == brand and swatch['filename'] == filename:
-            path = swatch.get('path')
-            if path and os.path.exists(path):
-                return send_file(path, mimetype='image/jpeg')
-                
+    if filename:
+        drive_view_url = f"https://drive.google.com/drive/folders/{EDGE_DRIVE_FOLDER_ID}"
+        return redirect(drive_view_url, code=302)
+        
     return "Swatch image not found", 404
 
 @app.route('/match_catalog', methods=['POST'])
@@ -165,7 +167,6 @@ def match_uploaded():
         file = request.files['image']
         img_bytes = file.read()
         
-        import cv2
         nparr = np.frombuffer(img_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
@@ -213,7 +214,6 @@ def match_uploaded():
         print(f"Error in match_uploaded: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ===== नया रूट: Laminate / Mica Matching के लिए =====
 @app.route('/match_laminate', methods=['POST'])
 def match_laminate():
     try:
@@ -232,7 +232,6 @@ def match_laminate():
         file = request.files['image']
         img_bytes = file.read()
         
-        import cv2
         nparr = np.frombuffer(img_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
@@ -280,8 +279,5 @@ def match_laminate():
         print(f"Error in match_laminate: {e}")
         return jsonify({'error': str(e)}), 500
 
-import os
-
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000)
