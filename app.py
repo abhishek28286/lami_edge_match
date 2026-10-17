@@ -37,46 +37,22 @@ def load_data():
 
 load_data()
 
-@app.route('/get_laminate_brands', methods=['GET'])
-def get_laminate_brands():
-    brands = list(loaded_laminates_index.keys())
-    return jsonify({'brands': brands}), 200
+# Direct Google Drive Folder Redirection for WoodMate
+LAMINATE_DRIVE_FOLDER_ID = "1q1M2-lEpIB6nNnW-A9q6T-AqQLgZ3MyK"
+EDGE_DRIVE_FOLDER_ID = "1OIk4KhArNCZkFfw9L4ccBNOBZsoSmWar"
 
-@app.route('/get_laminate_list', methods=['GET'])
-def get_laminate_list():
-    brand = request.args.get('brand')
-    if brand in loaded_laminates_index:
-        raw_items = loaded_laminates_index[brand].get('solid', []) + loaded_laminates_index[brand].get('texture', [])
-        
-        clean_items = []
-        for item in raw_items:
-            clean_items.append({
-                'filename': item.get('filename'),
-                'name': item.get('name', item.get('filename')),
-                'category': item.get('category', 'solid')
-            })
-        return jsonify({'items': clean_items}), 200
-        
-    return jsonify({'items': []}), 200
-
-# Google Drive से सीधा रीडायरेक्ट करने के लिए अपडेटेड रूट (Laminate Image)
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
     brand = request.args.get('brand')
     category = request.args.get('category', 'solid')
     filename = request.args.get('filename')
     
-    # चूंकि फाइलें Google Drive पर फोल्डर स्ट्रक्चर में हैं, हम चाहें तो डायरेक्ट Google Drive का फोल्डर व्यू लिंक दे सकते हैं 
-    # या फिर पिकल फाइल में सेव फाइलनेम के आधार पर गूगल ड्राइव प्रीव्यू लिंक भेज सकते हैं।
     if filename:
-        # अगर आपके पास गूगल ड्राइव फाइल की डायरेक्ट आईडी है या आप जनरल व्यू लिंक देना चाहते हैं:
-        # यहाँ हम Google Drive का सर्च/व्यू लिंक या डायरेक्ट लिंक रिटर्न कर रहे हैं
-        drive_view_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
-        return redirect(drive_view_url, code=302)
+        folder_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
+        return redirect(folder_url, code=302)
         
     return "Image not found", 404
 
-# Google Drive से सीधा रीडायरेक्ट करने के लिए अपडेटेड रूट (Edge Swatch Image)
 @app.route('/get_swatch_image', methods=['GET'])
 def get_swatch_image():
     brand = request.args.get('brand')
@@ -84,11 +60,10 @@ def get_swatch_image():
     filename = request.args.get('filename')
     
     if filename:
-        drive_view_url = f"https://drive.google.com/drive/folders/{EDGE_DRIVE_FOLDER_ID}"
-        return redirect(drive_view_url, code=302)
+        folder_url = f"https://drive.google.com/drive/folders/{EDGE_DRIVE_FOLDER_ID}"
+        return redirect(folder_url, code=302)
         
     return "Swatch image not found", 404
-
 @app.route('/match_catalog', methods=['POST'])
 def match_catalog():
     try:
