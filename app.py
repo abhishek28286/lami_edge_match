@@ -25,6 +25,7 @@ def load_data():
                 loaded_laminates_index = data.get('index', {})
                 laminate_folders = data.get('folders', {})
                 loaded_all_laminates = data.get('all_laminates', [])
+                print(f"Loaded {len(loaded_all_laminates)} laminates.")
     except Exception as e:
         print(f"Error loading laminates index: {e}")
 
@@ -32,38 +33,50 @@ def load_data():
         if os.path.exists('edge_swatches_index.pkl'):
             with open('edge_swatches_index.pkl', 'rb') as f:
                 loaded_edge_swatches = pickle.load(f)
+                print(f"Loaded {len(loaded_edge_swatches)} edge swatches.")
     except Exception as e:
         print(f"Error loading edge swatches index: {e}")
 
 load_data()
 
-# Direct Google Drive Folder Redirection for WoodMate
-LAMINATE_DRIVE_FOLDER_ID = "1q1M2-lEpIB6nNnW-A9q6T-AqQLgZ3MyK"
-EDGE_DRIVE_FOLDER_ID = "1OIk4KhArNCZkFfw9L4ccBNOBZsoSmWar"
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "WoodMate Backend is Running!",
+        "laminates_loaded": len(loaded_all_laminates),
+        "swatches_loaded": len(loaded_edge_swatches)
+    }), 200
+
+# API to provide available brands for dropdowns in Flutter app
+@app.route('/get_brands', methods=['GET'])
+def get_brands():
+    try:
+        lam_brands = list(set([item['brand'] for item in loaded_all_laminates if 'brand' in item]))
+        edge_brands = list(set([item['brand'] for item in loaded_edge_swatches if 'brand' in item]))
+        return jsonify({
+            'laminate_brands': sorted(lam_brands),
+            'edge_brands': sorted(edge_brands)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
-    brand = request.args.get('brand')
-    category = request.args.get('category', 'solid')
     filename = request.args.get('filename')
-    
     if filename:
+        # Direct folder redirection or direct view link
         folder_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
         return redirect(folder_url, code=302)
-        
     return "Image not found", 404
 
 @app.route('/get_swatch_image', methods=['GET'])
 def get_swatch_image():
-    brand = request.args.get('brand')
-    category = request.args.get('category', 'solid')
     filename = request.args.get('filename')
-    
     if filename:
         folder_url = f"https://drive.google.com/drive/folders/{EDGE_DRIVE_FOLDER_ID}"
         return redirect(folder_url, code=302)
-        
     return "Swatch image not found", 404
+
 @app.route('/match_catalog', methods=['POST'])
 def match_catalog():
     try:
@@ -81,13 +94,13 @@ def match_catalog():
 
         lam_mean_lab = None
         for lam in loaded_all_laminates:
-            if lam['brand'] == brand and lam['filename'] == filename and lam['category'] == category:
+            if lam.get('brand') == brand and lam.get('filename') == filename and lam.get('category') == category:
                 lam_mean_lab = lam['mean_lab']
                 break
         
         if lam_mean_lab is None:
             for lam in loaded_all_laminates:
-                if lam['brand'] == brand and lam['filename'] == filename:
+                if lam.get('brand') == brand and lam.get('filename') == filename:
                     lam_mean_lab = lam['mean_lab']
                     break
 
@@ -96,10 +109,9 @@ def match_catalog():
 
         results = []
         for swatch in loaded_edge_swatches:
-            if swatch['brand'] not in selected_brands:
+            if swatch.get('brand') not in selected_brands:
                 continue
-
-            if swatch['category'] != category:
+            if swatch.get('category') != category:
                 continue
 
             lab_dist = np.linalg.norm(lam_mean_lab - swatch['mean_lab'])
@@ -108,10 +120,10 @@ def match_catalog():
 
             score = max(0.0, 1.0 - (lab_dist / 120.0))
             results.append({
-                'name': swatch['name'],
-                'filename': swatch['filename'],
-                'brand': swatch['brand'],
-                'category': swatch['category'],
+                'name': swatch.get('name'),
+                'filename': swatch.get('filename'),
+                'brand': swatch.get('brand'),
+                'category': swatch.get('category'),
                 'score': float(score)
             })
 
@@ -164,7 +176,7 @@ def match_uploaded():
 
         results = []
         for swatch in loaded_edge_swatches:
-            if swatch['brand'] not in selected_brands:
+            if swatch.get('brand') not in selected_brands:
                 continue
 
             lab_dist = np.linalg.norm(mean_lab - swatch['mean_lab'])
@@ -173,10 +185,10 @@ def match_uploaded():
 
             score = max(0.0, 1.0 - (lab_dist / 120.0))
             results.append({
-                'name': swatch['name'],
-                'filename': swatch['filename'],
-                'brand': swatch['brand'],
-                'category': swatch['category'],
+                'name': swatch.get('name'),
+                'filename': swatch.get('filename'),
+                'brand': swatch.get('brand'),
+                'category': swatch.get('category'),
                 'score': float(score)
             })
 
@@ -229,7 +241,7 @@ def match_laminate():
 
         results = []
         for lam in loaded_all_laminates:
-            if lam['brand'] not in selected_brands:
+            if lam.get('brand') not in selected_brands:
                 continue
 
             lab_dist = np.linalg.norm(mean_lab - lam['mean_lab'])
@@ -238,10 +250,10 @@ def match_laminate():
 
             score = max(0.0, 1.0 - (lab_dist / 140.0))
             results.append({
-                'name': lam['name'],
-                'filename': lam['filename'],
-                'brand': lam['brand'],
-                'category': lam['category'],
+                'name': lam.get('name'),
+                'filename': lam.get('filename'),
+                'brand': lam.get('brand'),
+                'category': lam.get('category'),
                 'score': float(score)
             })
 
