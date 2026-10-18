@@ -216,4 +216,19 @@ def match_uploaded():
             results.append({
                 'name': swatch.get('name'),
                 'filename': swatch.get('filename'),
-                'brand': swatch.
+                'brand': swatch.get('brand'),
+                'category': swatch.get('category'),
+                'score': float(score)
+            })
+
+        results = sorted(results, key=lambda x: x['score'], reverse=True)
+        top_matches = results[:5]
+
+        return jsonify({'matches': top_matches}), 200
+
+    except Exception as e:
+        print(f"Error in match_uploaded: {e}")
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
