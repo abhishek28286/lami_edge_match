@@ -2,7 +2,7 @@
 import pickle
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -81,7 +81,7 @@ def get_laminate_list():
                 'name': item.get('name'),
                 'brand': item.get('brand'),
                 'category': item.get('category', 'solid'),
-                'drive_file_id': item.get('drive_file_id')
+                'image_url': f"https://drive.google.com/uc?export=view&id={item.get('drive_file_id')}" if item.get('drive_file_id') else ""
             }
             for item in loaded_all_laminates 
             if item.get('brand') == brand
@@ -89,22 +89,6 @@ def get_laminate_list():
         return jsonify({'items': brand_items}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/get_laminate_image', methods=['GET'])
-def get_laminate_image():
-    file_id = request.args.get('file_id')
-    if file_id:
-        image_url = f"https://drive.google.com/uc?export=view&id={file_id}"
-        return redirect(image_url, code=302)
-    return "Image not found", 404
-
-@app.route('/get_swatch_image', methods=['GET'])
-def get_swatch_image():
-    file_id = request.args.get('file_id')
-    if file_id:
-        image_url = f"https://drive.google.com/uc?export=view&id={file_id}"
-        return redirect(image_url, code=302)
-    return "Swatch image not found", 404
 
 @app.route('/match_catalog', methods=['POST'])
 def match_catalog():
@@ -148,12 +132,13 @@ def match_catalog():
                 continue
 
             score = max(0.0, 1.0 - (lab_dist / 120.0))
+            file_id = swatch.get('drive_file_id', '')
             results.append({
                 'name': swatch.get('name'),
                 'filename': swatch.get('filename'),
                 'brand': swatch.get('brand'),
                 'category': swatch.get('category'),
-                'drive_file_id': swatch.get('drive_file_id'),
+                'image_url': f"https://drive.google.com/uc?export=view&id={file_id}" if file_id else "",
                 'score': float(score)
             })
 
@@ -214,12 +199,13 @@ def match_uploaded():
                 continue
 
             score = max(0.0, 1.0 - (lab_dist / 120.0))
+            file_id = swatch.get('drive_file_id', '')
             results.append({
                 'name': swatch.get('name'),
                 'filename': swatch.get('filename'),
                 'brand': swatch.get('brand'),
                 'category': swatch.get('category'),
-                'drive_file_id': swatch.get('drive_file_id'),
+                'image_url': f"https://drive.google.com/uc?export=view&id={file_id}" if file_id else "",
                 'score': float(score)
             })
 
@@ -280,12 +266,13 @@ def match_laminate():
                 continue
 
             score = max(0.0, 1.0 - (lab_dist / 140.0))
+            file_id = lam.get('drive_file_id', '')
             results.append({
                 'name': lam.get('name'),
                 'filename': lam.get('filename'),
                 'brand': lam.get('brand'),
                 'category': lam.get('category'),
-                'drive_file_id': lam.get('drive_file_id'),
+                'image_url': f"https://drive.google.com/uc?export=view&id={file_id}" if file_id else "",
                 'score': float(score)
             })
 
