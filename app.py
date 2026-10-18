@@ -167,4 +167,4 @@ def match_uploaded():
         crop_y = float(request.form.get('crop_y', 0.5))
         
         if 'image' not in request.files:
-            return jsonify({'error': 'No image
+           return jsonify({'error': 'No image uploaded'}), 400
