@@ -167,4 +167,57 @@ def match_uploaded():
         crop_y = float(request.form.get('crop_y', 0.5))
         
         if 'image' not in request.files:
-           return jsonify({'error': 'No image uploaded'}), 400
+            return jsonify({'error': 'No image uploaded'}), 400
+
+        file = request.files['image']
+        img_bytes = file.read()
+        
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            return jsonify({'error': 'Invalid image format'}), 400
+
+        h, w, _ = img.shape
+        cx = int(crop_x * w)
+        cy = int(crop_y * h)
+        
+        box_size = 30
+        x1 = max(0, cx - box_size)
+        y1 = max(0, cy - box_size)
+        x2 = min(w, cx + box_size)
+        y2 = min(h, cy + box_size)
+        
+        patch = img[y1:y2, x1:x2]
+        patch_lab = cv2.cvtColor(patch, cv2.COLOR_BGR2LAB)
+        mean_lab = np.mean(patch_lab, axis=(0, 1))
+
+        results = []
+        for swatch in loaded_edge_swatches:
+            if swatch.get('brand') not in selected_brands:
+                continue
+
+            lab_dist = np.linalg.norm(mean_lab - swatch['mean_lab'])
+            if lab_dist > 120.0:
+                continue
+
+            score = max(0.0, 1.0 - (lab_dist / 120.0))
+            results.append({
+                'name': swatch.get('name'),
+                'filename': swatch.get('filename'),
+                'brand': swatch.get('brand'),
+                'category': swatch.get('category'),
+                'score': float(score)
+            })
+
+        results = sorted(results, key=lambda x: x['score'], reverse=True)
+        top_matches = results[:5]
+
+        return jsonify({'matches': top_matches}), 200
+
+    except Exception as e:
+        print(f"Error in match_uploaded: {e}")
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
