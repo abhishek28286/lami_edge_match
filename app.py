@@ -69,7 +69,6 @@ def get_brands():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# NEW ROUTE: Fetching laminate list/codes for a selected brand in Edge Banding tool
 @app.route('/get_laminate_list', methods=['GET'])
 def get_laminate_list():
     brand = request.args.get('brand')
@@ -81,7 +80,8 @@ def get_laminate_list():
                 'filename': item.get('filename'),
                 'name': item.get('name'),
                 'brand': item.get('brand'),
-                'category': item.get('category', 'solid')
+                'category': item.get('category', 'solid'),
+                'drive_file_id': item.get('drive_file_id')
             }
             for item in loaded_all_laminates 
             if item.get('brand') == brand
@@ -92,18 +92,18 @@ def get_laminate_list():
 
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
-    filename = request.args.get('filename')
-    if filename:
-        folder_url = f"https://drive.google.com/drive/folders/{LAMINATE_DRIVE_FOLDER_ID}"
-        return redirect(folder_url, code=302)
+    file_id = request.args.get('file_id')
+    if file_id:
+        image_url = f"https://drive.google.com/uc?export=view&id={file_id}"
+        return redirect(image_url, code=302)
     return "Image not found", 404
 
 @app.route('/get_swatch_image', methods=['GET'])
 def get_swatch_image():
-    filename = request.args.get('filename')
-    if filename:
-        folder_url = f"https://drive.google.com/drive/folders/{EDGE_DRIVE_FOLDER_ID}"
-        return redirect(folder_url, code=302)
+    file_id = request.args.get('file_id')
+    if file_id:
+        image_url = f"https://drive.google.com/uc?export=view&id={file_id}"
+        return redirect(image_url, code=302)
     return "Swatch image not found", 404
 
 @app.route('/match_catalog', methods=['POST'])
@@ -153,6 +153,7 @@ def match_catalog():
                 'filename': swatch.get('filename'),
                 'brand': swatch.get('brand'),
                 'category': swatch.get('category'),
+                'drive_file_id': swatch.get('drive_file_id'),
                 'score': float(score)
             })
 
@@ -218,6 +219,7 @@ def match_uploaded():
                 'filename': swatch.get('filename'),
                 'brand': swatch.get('brand'),
                 'category': swatch.get('category'),
+                'drive_file_id': swatch.get('drive_file_id'),
                 'score': float(score)
             })
 
@@ -283,6 +285,7 @@ def match_laminate():
                 'filename': lam.get('filename'),
                 'brand': lam.get('brand'),
                 'category': lam.get('category'),
+                'drive_file_id': lam.get('drive_file_id'),
                 'score': float(score)
             })
 
