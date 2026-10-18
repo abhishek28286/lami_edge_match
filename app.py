@@ -60,13 +60,24 @@ def home():
 @app.route('/get_brands', methods=['GET'])
 def get_brands():
     try:
-        lam_brands = list(set([item['brand'] for item in loaded_all_laminates if 'brand' in item]))
-        edge_brands = list(set([item['brand'] for item in loaded_edge_swatches if 'brand' in item]))
+        lam_brands = set()
+        for item in loaded_all_laminates:
+            b = item.get('brand')
+            if b:
+                lam_brands.add(str(b).strip())
+
+        edge_brands = set()
+        for item in loaded_edge_swatches:
+            b = item.get('brand')
+            if b:
+                edge_brands.add(str(b).strip())
+
         return jsonify({
-            'laminate_brands': sorted(lam_brands),
-            'edge_brands': sorted(edge_brands)
+            'laminate_brands': sorted(list(lam_brands)),
+            'edge_brands': sorted(list(edge_brands))
         }), 200
     except Exception as e:
+        print(f"Error in get_brands: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/get_laminate_list', methods=['GET'])
@@ -75,18 +86,18 @@ def get_laminate_list():
     if not brand:
         return jsonify({'error': 'Brand is required'}), 400
     try:
-        brand_items = [
-            {
-                'filename': item.get('filename'),
-                'name': item.get('name'),
-                'brand': item.get('brand'),
-                'category': item.get('category', 'solid')
-            }
-            for item in loaded_all_laminates 
-            if item.get('brand') == brand
-        ]
+        brand_items = []
+        for item in loaded_all_laminates:
+            if str(item.get('brand', '')).strip() == str(brand).strip():
+                brand_items.append({
+                    'filename': item.get('filename', ''),
+                    'name': item.get('name', ''),
+                    'brand': item.get('brand', ''),
+                    'category': item.get('category', 'solid')
+                })
         return jsonify({'items': brand_items}), 200
     except Exception as e:
+        print(f"Error in get_laminate_list: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/match_laminate', methods=['POST'])
@@ -129,7 +140,7 @@ def match_laminate():
 
         results = []
         for lam in loaded_all_laminates:
-            if lam.get('brand') not in selected_brands:
+            if str(lam.get('brand', '')).strip() not in selected_brands:
                 continue
 
             lab_dist = np.linalg.norm(mean_lab - lam['mean_lab'])
@@ -194,7 +205,7 @@ def match_uploaded():
 
         results = []
         for swatch in loaded_edge_swatches:
-            if swatch.get('brand') not in selected_brands:
+            if str(swatch.get('brand', '')).strip() not in selected_brands:
                 continue
 
             lab_dist = np.linalg.norm(mean_lab - swatch['mean_lab'])
@@ -205,19 +216,4 @@ def match_uploaded():
             results.append({
                 'name': swatch.get('name'),
                 'filename': swatch.get('filename'),
-                'brand': swatch.get('brand'),
-                'category': swatch.get('category'),
-                'score': float(score)
-            })
-
-        results = sorted(results, key=lambda x: x['score'], reverse=True)
-        top_matches = results[:5]
-
-        return jsonify({'matches': top_matches}), 200
-
-    except Exception as e:
-        print(f"Error in match_uploaded: {e}")
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+                'brand': swatch.
