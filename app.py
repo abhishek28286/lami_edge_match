@@ -57,25 +57,39 @@ def home():
         "swatches_loaded": len(loaded_edge_swatches)
     }), 200
 
-# ==================== IMAGE SERVING ROUTES (Supabase Linked) ====================
+# ==================== IMAGE SERVING ROUTES (Supabase Smart Path Linked) ====================
 @app.route('/laminate/<path:filename>', methods=['GET'])
 def serve_laminate_image(filename):
     safe_filename = filename.replace("[", "_").replace("]", "_")
-    # अगर फाइल के आगे पहले से laminate/ नहीं है, तो जोड़ दें
-    if not safe_filename.startswith("laminate/"):
-        cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_filename}"
-    else:
-        cloud_url = f"{SUPABASE_PUBLIC_URL}/{safe_filename}"
+    
+    # पहले पिकल डेटा से ढूंढें कि इस फाइल का ब्रांड और कैटेगरी क्या है
+    for lam in loaded_all_laminates:
+        if lam.get('filename') == filename or filename in lam.get('filename', ''):
+            brand = str(lam.get('brand', '')).strip()
+            category = str(lam.get('category', 'solid')).strip()
+            if brand:
+                cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{brand}/{category}/{safe_filename}"
+                return redirect(cloud_url)
+                
+    # अगर पिकल में न मिले तो डायरेक्ट फॉलबैक
+    cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_filename}"
     return redirect(cloud_url)
 
 @app.route('/edge/<path:filename>', methods=['GET'])
 def serve_edge_image(filename):
     safe_filename = filename.replace("[", "_").replace("]", "_")
-    if not safe_filename.startswith("edge/"):
-        cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{safe_filename}"
-    else:
-        cloud_url = f"{SUPABASE_PUBLIC_URL}/{safe_filename}"
+    
+    for swatch in loaded_edge_swatches:
+        if swatch.get('filename') == filename or filename in swatch.get('filename', ''):
+            brand = str(swatch.get('brand', '')).strip()
+            category = str(swatch.get('category', 'solid')).strip()
+            if brand:
+                cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{brand}/{category}/{safe_filename}"
+                return redirect(cloud_url)
+                
+    cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{safe_filename}"
     return redirect(cloud_url)
+
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
     brand = request.args.get('brand')
@@ -317,7 +331,7 @@ def match_catalog():
         print(f"Error in match_catalog: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ==================== EXPORT REPORT AS JPG ROUTE (Supabase Powered) ====================
+# ==================== EXPORT REPORT AS JPG ROUTE (Supabase Smart Path Powered) ====================
 @app.route('/export_report', methods=['POST'])
 def export_report():
     try:
@@ -341,11 +355,11 @@ def export_report():
 
         start_y = header_height + 20
         for i, match in enumerate(matches):
-            brand = match.get('brand', '')
+            brand = str(match.get('brand', '')).strip()
             name = match.get('name', '')
             score = float(match.get('score', 0)) * 100
             filename = match.get('filename', '')
-            category = match.get('category', 'solid')
+            category = str(match.get('category', 'solid')).strip()
 
             y1 = start_y + (i * row_height)
             y2 = y1 + row_height - 10
@@ -357,12 +371,12 @@ def export_report():
             # तय करें कि इमेज Laminate फोल्डर में है या Edge फोल्डर में
             folder_type = "laminate"
             for swatch in loaded_edge_swatches:
-                if swatch.get('filename') == filename and swatch.get('brand') == brand:
+                if swatch.get('filename') == filename and str(swatch.get('brand', '')).strip() == brand:
                     folder_type = "edge"
                     break
 
             safe_filename = filename.replace("[", "_").replace("]", "_")
-            img_url = f"{SUPABASE_PUBLIC_URL}/{folder_type}/{safe_filename}"
+            img_url = f"{SUPABASE_PUBLIC_URL}/{folder_type}/{brand}/{category}/{safe_filename}"
 
             try:
                 req = urllib.request.Request(img_url, headers={'User-Agent': 'Mozilla/5.0'})
