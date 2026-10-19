@@ -2,26 +2,26 @@
 import pickle
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, redirect, send_file
 from flask_cors import CORS
 import io
+import urllib.request
 
 app = Flask(__name__)
 CORS(app)
 
 loaded_all_laminates = []
 loaded_edge_swatches = []
-loaded_laminate_gdrive = {}
-loaded_edge_gdrive = {}
+
+# Supabase Public Storage बेस यूआरएल
+SUPABASE_PUBLIC_URL = "https://ehyjgdqwkfzqcktxwudn.supabase.co/storage/v1/object/public/flazzor-assets"
 
 def load_data():
-    global loaded_all_laminates, loaded_edge_swatches, loaded_laminate_gdrive, loaded_edge_gdrive
+    global loaded_all_laminates, loaded_edge_swatches
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     lam_path = os.path.join(base_dir, 'laminates_index.pkl')
     edge_path = os.path.join(base_dir, 'edge_swatches_index.pkl')
-    lam_gdrive_path = os.path.join(base_dir, 'laminates_gdrive_index.pkl')
-    edge_gdrive_path = os.path.join(base_dir, 'edge_gdrive_index.pkl')
     
     try:
         if os.path.exists(lam_path):
@@ -47,74 +47,35 @@ def load_data():
     except Exception as e:
         print(f"Error loading edge swatches index: {e}")
 
-    # Google Drive Indexing Pickle फाइल्स लोड करना
-    try:
-        if os.path.exists(lam_gdrive_path):
-            with open(lam_gdrive_path, 'rb') as f:
-                loaded_laminate_gdrive = pickle.load(f)
-            print(f"Loaded {len(loaded_laminate_gdrive)} laminate GDrive paths.")
-    except Exception as e:
-        print(f"Error loading laminate GDrive index: {e}")
-
-    try:
-        if os.path.exists(edge_gdrive_path):
-            with open(edge_gdrive_path, 'rb') as f:
-                loaded_edge_gdrive = pickle.load(f)
-            print(f"Loaded {len(loaded_edge_gdrive)} edge GDrive paths.")
-    except Exception as e:
-        print(f"Error loading edge GDrive index: {e}")
-
 load_data()
 
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        "status": "Flazzor Interior Backend is Running with Report & GDrive Mapping!",
+        "status": "Flazzor Interior Backend is Running with Supabase Cloud Storage!",
         "laminates_loaded": len(loaded_all_laminates),
-        "swatches_loaded": len(loaded_edge_swatches),
-        "gdrive_laminates": len(loaded_laminate_gdrive),
-        "gdrive_swatches": len(loaded_edge_gdrive)
+        "swatches_loaded": len(loaded_edge_swatches)
     }), 200
 
-# ==================== IMAGE SERVING ROUTES (GDrive Linked) ====================
+# ==================== IMAGE SERVING ROUTES (Supabase Linked) ====================
 @app.route('/laminate/<path:filename>', methods=['GET'])
 def serve_laminate_image(filename):
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    gdrive_base = r"G:\My Drive\Flazzor_Assets\laminate"
-    
-    matched_key = None
-    for key in loaded_laminate_gdrive:
-        if key.endswith(filename) or filename in key:
-            matched_key = key
-            break
-            
-    if matched_key:
-        full_path = os.path.join(gdrive_base, matched_key.replace('/', os.sep))
-        if os.path.exists(full_path):
-            return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
-
-    folder_path = os.path.join(base_dir, 'laminate')
-    return send_from_directory(folder_path, filename)
+    safe_filename = filename.replace("[", "_").replace("]", "_")
+    # अगर फाइल के आगे पहले से laminate/ नहीं है, तो जोड़ दें
+    if not safe_filename.startswith("laminate/"):
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_filename}"
+    else:
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/{safe_filename}"
+    return redirect(cloud_url)
 
 @app.route('/edge/<path:filename>', methods=['GET'])
 def serve_edge_image(filename):
-    gdrive_base = r"G:\My Drive\Flazzor_Assets\edge"
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    matched_key = None
-    for key in loaded_edge_gdrive:
-        if key.endswith(filename) or filename in key:
-            matched_key = key
-            break
-            
-    if matched_key:
-        full_path = os.path.join(gdrive_base, matched_key.replace('/', os.sep))
-        if os.path.exists(full_path):
-            return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
-
-    folder_path = os.path.join(base_dir, 'edge')
-    return send_from_directory(folder_path, filename)
-
+    safe_filename = filename.replace("[", "_").replace("]", "_")
+    if not safe_filename.startswith("edge/"):
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{safe_filename}"
+    else:
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/{safe_filename}"
+    return redirect(cloud_url)
 @app.route('/get_laminate_image', methods=['GET'])
 def get_laminate_image():
     brand = request.args.get('brand')
@@ -124,18 +85,10 @@ def get_laminate_image():
     if not brand or not filename:
         return jsonify({'error': 'Brand and filename are required'}), 400
         
-    gdrive_base = r"G:\My Drive\Flazzor_Assets\laminate"
-    target_key = f"{brand}/{category}/{filename}"
-    
-    if target_key in loaded_laminate_gdrive:
-        full_path = os.path.join(gdrive_base, target_key.replace('/', os.sep))
-        if os.path.exists(full_path):
-            return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
-            
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(base_dir, 'laminate')
-    target_path = os.path.join(brand, category, filename) if not filename.startswith(brand) else filename
-    return send_from_directory(folder_path, target_path)
+    target_path = f"{brand}/{category}/{filename}" if not filename.startswith(brand) else filename
+    safe_path = target_path.replace("[", "_").replace("]", "_")
+    cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_path}"
+    return redirect(cloud_url)
 # ==============================================================
 
 @app.route('/get_brands', methods=['GET'])
@@ -322,7 +275,6 @@ def match_catalog():
         if not selected_brands or selected_brands == ['']:
             return jsonify({'error': 'Kripya kam se kam ek company chunein!'}), 400
 
-        # पहले टार्गेट लेमिनेट का LAB प्रोफाइल और कैटेगरी ढूंढेगें
         target_lab = None
         target_category = 'solid'
         for lam in loaded_all_laminates:
@@ -339,7 +291,6 @@ def match_catalog():
             if str(swatch.get('brand', '')).strip() not in selected_brands:
                 continue
 
-            # कैटेगरी फिल्टर: सॉलिड सिर्फ सॉलिड से और टेक्सचर सिर्फ टेक्सचर से मैच होगा
             swatch_category = swatch.get('category', 'solid')
             if swatch_category != target_category:
                 continue
@@ -366,7 +317,7 @@ def match_catalog():
         print(f"Error in match_catalog: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ==================== EXPORT REPORT AS JPG ROUTE ====================
+# ==================== EXPORT REPORT AS JPG ROUTE (Supabase Powered) ====================
 @app.route('/export_report', methods=['POST'])
 def export_report():
     try:
@@ -388,15 +339,13 @@ def export_report():
         cv2.putText(report_img, "FLAZZOR INTERIOR - MATCH REPORT", (30, 45), cv2.FONT_HERSHEY_DUPLEX, 0.9, (255, 255, 255), 2)
         cv2.putText(report_img, f"Tool: {tool_type} | Udaipur", (30, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
-        gdrive_base_lam = r"G:\My Drive\Flazzor_Assets\laminate"
-        gdrive_base_edge = r"G:\My Drive\Flazzor_Assets\edge"
-
         start_y = header_height + 20
         for i, match in enumerate(matches):
             brand = match.get('brand', '')
             name = match.get('name', '')
             score = float(match.get('score', 0)) * 100
             filename = match.get('filename', '')
+            category = match.get('category', 'solid')
 
             y1 = start_y + (i * row_height)
             y2 = y1 + row_height - 10
@@ -404,22 +353,27 @@ def export_report():
             cv2.rectangle(report_img, (20, y1), (canvas_width - 20, y2), (200, 200, 200), 1)
 
             thumb_img = np.zeros((100, 100, 3), dtype=np.uint8) + 220
-            full_path = None
-
-            for key in loaded_laminate_gdrive:
-                if key.endswith(filename):
-                    full_path = os.path.join(gdrive_base_lam, key.replace('/', os.sep))
+            
+            # तय करें कि इमेज Laminate फोल्डर में है या Edge फोल्डर में
+            folder_type = "laminate"
+            for swatch in loaded_edge_swatches:
+                if swatch.get('filename') == filename and swatch.get('brand') == brand:
+                    folder_type = "edge"
                     break
-            if not full_path or not os.path.exists(full_path):
-                for key in loaded_edge_gdrive:
-                    if key.endswith(filename):
-                        full_path = os.path.join(gdrive_base_edge, key.replace('/', os.sep))
-                        break
 
-            if full_path and os.path.exists(full_path):
-                loaded_thumb = cv2.imread(full_path)
-                if loaded_thumb is not None:
-                    thumb_img = cv2.resize(loaded_thumb, (100, 100))
+            safe_filename = filename.replace("[", "_").replace("]", "_")
+            img_url = f"{SUPABASE_PUBLIC_URL}/{folder_type}/{safe_filename}"
+
+            try:
+                req = urllib.request.Request(img_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    image_data = resp.read()
+                    image_np = np.asarray(bytearray(image_data), dtype=np.uint8)
+                    loaded_thumb = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+                    if loaded_thumb is not None:
+                        thumb_img = cv2.resize(loaded_thumb, (100, 100))
+            except Exception as thumb_err:
+                print(f"Could not fetch thumbnail from cloud: {thumb_err}")
 
             report_img[y1+5:y1+105, 35:135] = thumb_img
             cv2.rectangle(report_img, (35, y1+5), (135, y1+105), (150, 150, 150), 1)
@@ -446,4 +400,5 @@ def export_report():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
