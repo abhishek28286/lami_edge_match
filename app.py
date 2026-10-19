@@ -2,8 +2,9 @@
 import pickle
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -46,7 +47,7 @@ def load_data():
     except Exception as e:
         print(f"Error loading edge swatches index: {e}")
 
-    # नई Google Drive Indexing Pickle फाइल्स लोड करना
+    # Google Drive Indexing Pickle फाइल्स लोड करना
     try:
         if os.path.exists(lam_gdrive_path):
             with open(lam_gdrive_path, 'rb') as f:
@@ -63,13 +64,12 @@ def load_data():
     except Exception as e:
         print(f"Error loading edge GDrive index: {e}")
 
-# Server start hote hi data load ho jayega
 load_data()
 
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        "status": "Flazzor Interior Backend is Running with GDrive Mapping!",
+        "status": "Flazzor Interior Backend is Running with Report & GDrive Mapping!",
         "laminates_loaded": len(loaded_all_laminates),
         "swatches_loaded": len(loaded_edge_swatches),
         "gdrive_laminates": len(loaded_laminate_gdrive),
@@ -79,13 +79,9 @@ def home():
 # ==================== IMAGE SERVING ROUTES (GDrive Linked) ====================
 @app.route('/laminate/<path:filename>', methods=['GET'])
 def serve_laminate_image(filename):
-    # Google Drive G: ड्राइव से या लोकल फोल्डर से मैप करना
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # पहले G ड्राइव पाथ चेक करेंगे
     gdrive_base = r"G:\My Drive\Flazzor_Assets\laminate"
     
-    # अगर filename में पूरा रिलेटिव पाथ मिल जाए
     matched_key = None
     for key in loaded_laminate_gdrive:
         if key.endswith(filename) or filename in key:
@@ -95,11 +91,8 @@ def serve_laminate_image(filename):
     if matched_key:
         full_path = os.path.join(gdrive_base, matched_key.replace('/', os.sep))
         if os.path.exists(full_path):
-            folder_name = os.path.dirname(full_path)
-            file_name = os.path.basename(full_path)
-            return send_from_directory(folder_name, file_name)
+            return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
-    # अगर G ड्राइव पर न मिले तो डिफ़ॉल्ट लोकल फोल्डर
     folder_path = os.path.join(base_dir, 'laminate')
     return send_from_directory(folder_path, filename)
 
@@ -117,9 +110,7 @@ def serve_edge_image(filename):
     if matched_key:
         full_path = os.path.join(gdrive_base, matched_key.replace('/', os.sep))
         if os.path.exists(full_path):
-            folder_name = os.path.dirname(full_path)
-            file_name = os.path.basename(full_path)
-            return send_from_directory(folder_name, file_name)
+            return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
     folder_path = os.path.join(base_dir, 'edge')
     return send_from_directory(folder_path, filename)
@@ -141,7 +132,6 @@ def get_laminate_image():
         if os.path.exists(full_path):
             return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
             
-    # Fallback
     base_dir = os.path.dirname(os.path.abspath(__file__))
     folder_path = os.path.join(base_dir, 'laminate')
     target_path = os.path.join(brand, category, filename) if not filename.startswith(brand) else filename
@@ -327,16 +317,18 @@ def match_catalog():
         brands_param = request.form.get('brands', '')
         selected_brands = [b.strip() for b in brands_param.split(',')] if brands_param else []
         
-        target_brand = request.form.get('brand', '')
         target_filename = request.form.get('filename', '')
         
         if not selected_brands or selected_brands == ['']:
-            return jsonify({'error': 'Kripya kam se kam ek Edge Banding company chunein!'}), 400
+            return jsonify({'error': 'Kripya kam se kam ek company chunein!'}), 400
 
+        # पहले टार्गेट लेमिनेट का LAB प्रोफाइल और कैटेगरी ढूंढेगें
         target_lab = None
+        target_category = 'solid'
         for lam in loaded_all_laminates:
             if str(lam.get('filename', '')).strip() == target_filename.strip():
                 target_lab = lam.get('mean_lab')
+                target_category = lam.get('category', 'solid')
                 break
                 
         if target_lab is None:
@@ -345,6 +337,11 @@ def match_catalog():
         results = []
         for swatch in loaded_edge_swatches:
             if str(swatch.get('brand', '')).strip() not in selected_brands:
+                continue
+
+            # कैटेगरी फिल्टर: सॉलिड सिर्फ सॉलिड से और टेक्सचर सिर्फ टेक्सचर से मैच होगा
+            swatch_category = swatch.get('category', 'solid')
+            if swatch_category != target_category:
                 continue
 
             lab_dist = np.linalg.norm(target_lab - swatch['mean_lab'])
@@ -356,7 +353,7 @@ def match_catalog():
                 'name': swatch.get('name'),
                 'filename': swatch.get('filename'),
                 'brand': swatch.get('brand'),
-                'category': swatch.get('category'),
+                'category': swatch_category,
                 'score': float(score)
             })
 
@@ -367,6 +364,85 @@ def match_catalog():
 
     except Exception as e:
         print(f"Error in match_catalog: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== EXPORT REPORT AS JPG ROUTE ====================
+@app.route('/export_report', methods=['POST'])
+def export_report():
+    try:
+        data = request.get_json()
+        matches = data.get('matches', [])
+        tool_type = data.get('tool_type', 'Laminate Matching Report')
+
+        if not matches:
+            return jsonify({'error': 'No matches found to export'}), 400
+
+        canvas_width = 800
+        row_height = 130
+        header_height = 100
+        canvas_height = header_height + (len(matches) * row_height) + 50
+
+        report_img = np.ones((canvas_height, canvas_width, 3), dtype=np.uint8) * 255
+
+        cv2.rectangle(report_img, (0, 0), (canvas_width, header_height), (60, 35, 20), -1)
+        cv2.putText(report_img, "FLAZZOR INTERIOR - MATCH REPORT", (30, 45), cv2.FONT_HERSHEY_DUPLEX, 0.9, (255, 255, 255), 2)
+        cv2.putText(report_img, f"Tool: {tool_type} | Udaipur", (30, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+        gdrive_base_lam = r"G:\My Drive\Flazzor_Assets\laminate"
+        gdrive_base_edge = r"G:\My Drive\Flazzor_Assets\edge"
+
+        start_y = header_height + 20
+        for i, match in enumerate(matches):
+            brand = match.get('brand', '')
+            name = match.get('name', '')
+            score = float(match.get('score', 0)) * 100
+            filename = match.get('filename', '')
+
+            y1 = start_y + (i * row_height)
+            y2 = y1 + row_height - 10
+            cv2.rectangle(report_img, (20, y1), (canvas_width - 20, y2), (245, 245, 245), -1)
+            cv2.rectangle(report_img, (20, y1), (canvas_width - 20, y2), (200, 200, 200), 1)
+
+            thumb_img = np.zeros((100, 100, 3), dtype=np.uint8) + 220
+            full_path = None
+
+            for key in loaded_laminate_gdrive:
+                if key.endswith(filename):
+                    full_path = os.path.join(gdrive_base_lam, key.replace('/', os.sep))
+                    break
+            if not full_path or not os.path.exists(full_path):
+                for key in loaded_edge_gdrive:
+                    if key.endswith(filename):
+                        full_path = os.path.join(gdrive_base_edge, key.replace('/', os.sep))
+                        break
+
+            if full_path and os.path.exists(full_path):
+                loaded_thumb = cv2.imread(full_path)
+                if loaded_thumb is not None:
+                    thumb_img = cv2.resize(loaded_thumb, (100, 100))
+
+            report_img[y1+5:y1+105, 35:135] = thumb_img
+            cv2.rectangle(report_img, (35, y1+5), (135, y1+105), (150, 150, 150), 1)
+
+            rank_text = f"Rank {i+1} - {brand}"
+            score_text = f"{score:.1f}% Match"
+            code_text = f"Code/Name: {name}"
+
+            cv2.putText(report_img, rank_text, (155, y1 + 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (20, 20, 20), 1)
+            cv2.putText(report_img, score_text, (580, y1 + 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 120, 0), 1)
+            cv2.putText(report_img, code_text, (155, y1 + 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (80, 80, 80), 1)
+
+        success, encoded_img = cv2.imencode('.jpg', report_img)
+        if not success:
+            return jsonify({'error': 'Failed to generate report image'}), 500
+
+        io_buf = io.BytesIO(encoded_img.tobytes())
+        io_buf.seek(0)
+
+        return send_file(io_buf, mimetype='image/jpeg', as_attachment=True, download_name='Flazzor_Match_Report.jpg')
+
+    except Exception as e:
+        print(f"Error in export_report: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
