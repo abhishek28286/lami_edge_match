@@ -4,10 +4,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:ui_web' as ui_web;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+
+// कंडीशनल इम्पोर्ट ताकि एंड्रॉइड APK बनाते वक्त एरर न आए
+import 'package:flutter/foundation.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
+import 'package:flutter/foundation.dart' if (dart.library.html) 'dart:html' as html;
 
 const String baseUrl = 'https://lami-edge-match.onrender.com';
 void main() {
