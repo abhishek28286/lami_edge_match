@@ -31,7 +31,7 @@ class _MasterHomeScreenState extends State<MasterHomeScreen> {
       setState(() {
         cutListCredits--;
       });
-     try {
+      try {
         if (kIsWeb) {
           String htmlViewId = 'cutlist-html-view';
           
@@ -57,6 +57,10 @@ class _MasterHomeScreenState extends State<MasterHomeScreen> {
                 ),
               ),
             ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("CutList Optimizer is available on Web version.")),
           );
         }
       } catch (e) {
@@ -498,7 +502,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
     }
   }
 
-  // Real Export Report Function for Laminate Matching
   Future<void> _exportReport() async {
     if (_matchResults.isEmpty) return;
     try {
@@ -512,12 +515,14 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
       );
 
       if (response.statusCode == 200) {
-        final blob = html.Blob([response.bodyBytes], 'image/jpeg');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute("download", "Flazzor_Laminate_Match_Report.jpg")
-          ..click();
-        html.Url.revokeObjectUrl(url);
+        if (kIsWeb) {
+          final blob = html.Blob([response.bodyBytes], 'image/jpeg');
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          final anchor = html.AnchorElement(href: url)
+            ..setAttribute("download", "Flazzor_Laminate_Match_Report.jpg")
+            ..click();
+          html.Url.revokeObjectUrl(url);
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Report downloaded successfully as JPG!")),
@@ -1045,7 +1050,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
     }
   }
 
-  // Real Export Report Function for Edge Banding
   Future<void> _exportReport() async {
     if (_matchResults.isEmpty) return;
     try {
@@ -1059,12 +1063,14 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
       );
 
       if (response.statusCode == 200) {
-        final blob = html.Blob([response.bodyBytes], 'image/jpeg');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute("download", "Flazzor_Edge_Match_Report.jpg")
-          ..click();
-        html.Url.revokeObjectUrl(url);
+        if (kIsWeb) {
+          final blob = html.Blob([response.bodyBytes], 'image/jpeg');
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          final anchor = html.AnchorElement(href: url)
+            ..setAttribute("download", "Flazzor_Edge_Match_Report.jpg")
+            ..click();
+          html.Url.revokeObjectUrl(url);
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Report downloaded successfully as JPG!")),
