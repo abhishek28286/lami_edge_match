@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// कंडीशनल इम्पोर्ट ताकि एंड्रॉइड APK बनाते वक्त एरर न आए
+// वेब और एंड्रॉइड के बीच कम्पैटिबिलिटी के लिए सेफ कंडीशनल इम्पोर्ट्स
 import 'package:flutter/foundation.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
 import 'package:flutter/foundation.dart' if (dart.library.html) 'dart:html' as html;
 
@@ -60,7 +60,7 @@ class _MasterHomeScreenState extends State<MasterHomeScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("CutList Optimizer is available on Web version.")),
+            const SnackBar(content: Text("CutList Optimizer is optimized for Web version.")),
           );
         }
       } catch (e) {
