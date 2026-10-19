@@ -57,12 +57,17 @@ def home():
         "swatches_loaded": len(loaded_edge_swatches)
     }), 200
 
-# ==================== IMAGE SERVING ROUTES (Supabase Smart Path Linked) ====================
+# ==================== IMAGE SERVING ROUTES (Fixed & Safe) ====================
 @app.route('/laminate/<path:filename>', methods=['GET'])
 def serve_laminate_image(filename):
     safe_filename = filename.replace("[", "_").replace("]", "_")
     
-    # पहले पिकल डेटा से ढूंढें कि इस फाइल का ब्रांड और कैटेगरी क्या है
+    # अगर फाइल नाम में पहले से ही पाथ शामिल है
+    if "/" in filename:
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_filename}"
+        return redirect(cloud_url)
+        
+    # पिकल से ब्रांड और कैटेगरी ढूंढकर सटीक पाथ बनाना
     for lam in loaded_all_laminates:
         if lam.get('filename') == filename or filename in lam.get('filename', ''):
             brand = str(lam.get('brand', '')).strip()
@@ -71,7 +76,6 @@ def serve_laminate_image(filename):
                 cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{brand}/{category}/{safe_filename}"
                 return redirect(cloud_url)
                 
-    # अगर पिकल में न मिले तो डायरेक्ट फॉलबैक
     cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_filename}"
     return redirect(cloud_url)
 
@@ -79,6 +83,10 @@ def serve_laminate_image(filename):
 def serve_edge_image(filename):
     safe_filename = filename.replace("[", "_").replace("]", "_")
     
+    if "/" in filename:
+        cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{safe_filename}"
+        return redirect(cloud_url)
+        
     for swatch in loaded_edge_swatches:
         if swatch.get('filename') == filename or filename in swatch.get('filename', ''):
             brand = str(swatch.get('brand', '')).strip()
@@ -331,7 +339,7 @@ def match_catalog():
         print(f"Error in match_catalog: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ==================== EXPORT REPORT AS JPG ROUTE (Supabase Smart Path Powered) ====================
+# ==================== EXPORT REPORT AS JPG ROUTE ====================
 @app.route('/export_report', methods=['POST'])
 def export_report():
     try:
@@ -363,56 +371,4 @@ def export_report():
 
             y1 = start_y + (i * row_height)
             y2 = y1 + row_height - 10
-            cv2.rectangle(report_img, (20, y1), (canvas_width - 20, y2), (245, 245, 245), -1)
-            cv2.rectangle(report_img, (20, y1), (canvas_width - 20, y2), (200, 200, 200), 1)
-
-            thumb_img = np.zeros((100, 100, 3), dtype=np.uint8) + 220
-            
-            # तय करें कि इमेज Laminate फोल्डर में है या Edge फोल्डर में
-            folder_type = "laminate"
-            for swatch in loaded_edge_swatches:
-                if swatch.get('filename') == filename and str(swatch.get('brand', '')).strip() == brand:
-                    folder_type = "edge"
-                    break
-
-            safe_filename = filename.replace("[", "_").replace("]", "_")
-            img_url = f"{SUPABASE_PUBLIC_URL}/{folder_type}/{brand}/{category}/{safe_filename}"
-
-            try:
-                req = urllib.request.Request(img_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=3) as resp:
-                    image_data = resp.read()
-                    image_np = np.asarray(bytearray(image_data), dtype=np.uint8)
-                    loaded_thumb = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-                    if loaded_thumb is not None:
-                        thumb_img = cv2.resize(loaded_thumb, (100, 100))
-            except Exception as thumb_err:
-                print(f"Could not fetch thumbnail from cloud: {thumb_err}")
-
-            report_img[y1+5:y1+105, 35:135] = thumb_img
-            cv2.rectangle(report_img, (35, y1+5), (135, y1+105), (150, 150, 150), 1)
-
-            rank_text = f"Rank {i+1} - {brand}"
-            score_text = f"{score:.1f}% Match"
-            code_text = f"Code/Name: {name}"
-
-            cv2.putText(report_img, rank_text, (155, y1 + 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (20, 20, 20), 1)
-            cv2.putText(report_img, score_text, (580, y1 + 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 120, 0), 1)
-            cv2.putText(report_img, code_text, (155, y1 + 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (80, 80, 80), 1)
-
-        success, encoded_img = cv2.imencode('.jpg', report_img)
-        if not success:
-            return jsonify({'error': 'Failed to generate report image'}), 500
-
-        io_buf = io.BytesIO(encoded_img.tobytes())
-        io_buf.seek(0)
-
-        return send_file(io_buf, mimetype='image/jpeg', as_attachment=True, download_name='Flazzor_Match_Report.jpg')
-
-    except Exception as e:
-        print(f"Error in export_report: {e}")
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+            cv2.rectangle(report_img, (20,
