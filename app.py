@@ -2,7 +2,7 @@
 import pickle
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, redirect, send_file
+from flask import Flask, request, jsonify, redirect, send_file, send_from_directory
 from flask_cors import CORS
 import io
 import urllib.request
@@ -56,6 +56,12 @@ def home():
         "laminates_loaded": len(loaded_all_laminates),
         "swatches_loaded": len(loaded_edge_swatches)
     }), 200
+
+# ==================== CUTLIST OPTIMIZER HTML ROUTE ====================
+@app.route('/cutlist_optimizer', methods=['GET'])
+def cutlist_optimizer():
+    # app.py के पास रखी cutlist.html फाइल को सर्व करेगा
+    return send_from_directory('.', 'cutlist.html')
 
 # ==================== IMAGE SERVING ROUTES ====================
 @app.route('/laminate/<path:filename>', methods=['GET'])
