@@ -17,14 +17,42 @@
   button.delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
   #resultSection { display: none; margin-top: 30px; }
   .pdf-page { background: white; border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; page-break-after: always; }
-  .sheet-box { border: 2px solid #14233C; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 6px; }
+  .sheet-box { border: 2px solid #14233C; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 6px; position: relative; }
+  
+  /* Visual Sheet Layout Canvas / Box Styling */
+  .visual-sheet {
+   width: 100%;
+   max-width: 700px;
+   height: 350px;
+   border: 3px solid #14233C;
+   background: #fff;
+   position: relative;
+   margin: 15px auto;
+   box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+  }
+  .cut-part {
+   position: absolute;
+   border: 1.5px solid #2c3e50;
+   background: #3498db;
+   color: white;
+   font-size: 11px;
+   font-weight: bold;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   overflow: hidden;
+   padding: 2px;
+   box-sizing: border-box;
+   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
  </style>
 </head>
 <body>
 
 <div class="container">
  <h2>Flazzor Interiors - CutList Optimizer</h2>
- <p style="color: #666;">Manage stock sheets and generate 8x4 / standard sheet cutting layouts with PDF export.</p>
+ <p style="color: #666;">Manage stock sheets and generate 8x4 / standard sheet cutting layouts with visual diagrams and PDF export.</p>
  
  <h3>1. Stock Material Master (Saved Automatically)</h3>
  <table id="stockTable">
@@ -170,6 +198,7 @@ function optimizeCuts() {
   return;
  }
 
+ let kerf = parseFloat(document.getElementById("bladeKerf").value) || 3;
  let stockMap = {};
  getStoredStock().forEach(s => { stockMap[s.material] = s; });
 
@@ -188,36 +217,113 @@ function optimizeCuts() {
   if (pLen <= 0 || pWid <= 0 || pQty <= 0) continue;
 
   if (!panelsByMaterial[mat]) panelsByMaterial[mat] = [];
-  panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, qty: pQty, rotate: canRotate });
+  
+  // Expand individual pieces based on Qty
+  for(let q=0; q<pQty; q++) {
+   panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, rotate: canRotate });
+  }
  }
 
  let container = document.getElementById("sheetsContainer");
  container.innerHTML = "";
- let sheetCounter = 1;
+ let globalSheetCount = 1;
 
  for (let mat in panelsByMaterial) {
   let stock = stockMap[mat] || { length: 2440, width: 1220 };
-  let panels = panelsByMaterial[mat];
+  let allParts = panelsByMaterial[mat];
 
-  let pageDiv = document.createElement('div');
-  pageDiv.className = "pdf-page";
-  
-  let html = `<h3>Flazzor Interiors - Cutting Report</h3>`;
-  html += `<p><b>Material:</b> ${mat} (Standard Size: ${stock.length} x ${stock.width} mm)</p>`;
-  html += `<table style="margin-bottom:15px;"><thead><tr><th>Part Name</th><th>Length</th><th>Width</th><th>Qty</th><th>Rotate Allowed</th></tr></thead><tbody>`;
-  
-  panels.forEach(p => {
-   html += `<tr><td>${p.name}</td><td>${p.length} mm</td><td>${p.width} mm</td><td>${p.qty}</td><td>${p.rotate ? 'Yes' : 'No'}</td></tr>`;
+  // Simple Bin Packing / Sheet Nesting simulation
+  let sheets = [];
+  let currentSheetParts = [];
+  let cursorX = kerf;
+  let cursorY = kerf;
+  let rowMaxHeight = 0;
+
+  allParts.forEach(part => {
+   let l = part.length;
+   let w = part.width;
+
+   // Check if rotation fits better or needed
+   let fitsNormal = (cursorX + l + kerf <= stock.length) && (cursorY + w + kerf <= stock.width);
+   let fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
+
+   if (!fitsNormal && !fitsRotated) {
+    // Move to next row in same sheet
+    cursorX = kerf;
+    cursorY += rowMaxHeight + kerf;
+    rowMaxHeight = 0;
+
+    fitsNormal = (cursorX + l + kerf <= stock.length) && (cursorY + w + kerf <= stock.width);
+    fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
+
+    if (!fitsNormal && !fitsRotated) {
+     // Push current sheet and start new sheet
+     sheets.push(currentSheetParts);
+     currentSheetParts = [];
+     cursorX = kerf;
+     cursorY = kerf;
+     rowMaxHeight = 0;
+    }
+   }
+
+   let rotated = false;
+   if (!(cursorX + l + kerf <= stock.length && cursorY + w + kerf <= stock.width) && fitsRotated) {
+    let temp = l; l = w; w = temp;
+    rotated = true;
+   }
+
+   currentSheetParts.push({
+    name: part.name,
+    length: l,
+    width: w,
+    x: cursorX,
+    y: cursorY,
+    rotated: rotated
+   });
+
+   cursorX += l + kerf;
+   if (w > rowMaxHeight) rowMaxHeight = w;
   });
-  html += `</tbody></table>`;
 
-  html += `<div class="sheet-box"><h4>Sheet # ${sheetCounter} (${stock.length} x ${stock.width} mm) Layout</h4>`;
-  html += `<p style="color: green; font-weight: bold;">✔ All panels successfully nested and calculated within standard 8x4 / stock dimensions with kerf spacing.</p>`;
-  html += `</div>`;
+  if (currentSheetParts.length > 0) {
+   sheets.push(currentSheetParts);
+  }
 
-  pageDiv.innerHTML = html;
-  container.appendChild(pageDiv);
-  sheetCounter++;
+  // Render each generated sheet
+  sheets.forEach((sheetParts, sIdx) => {
+   let pageDiv = document.createElement('div');
+   pageDiv.className = "pdf-page";
+
+   let html = `<h3>Flazzor Interiors - Cutting Layout Report</h3>`;
+   html += `<p><b>Material:</b> ${mat} | <b>Sheet Size:</b> ${stock.length} x ${stock.width} mm | <b>Blade Kerf:</b> ${kerf} mm</p>`;
+   html += `<div class="sheet-box">`;
+   html += `<h4>Sheet # ${globalSheetCount} Layout (${stock.length} x ${stock.width} mm) - Contains ${sheetParts.length} Panels</h4>`;
+   
+   // Visual canvas representation container
+   html += `<div class="visual-sheet" id="sheet_canvas_${globalSheetCount}">`;
+   
+   sheetParts.forEach(p => {
+    // Scale coordinates for 700x350 visual box
+    let scaleX = 700 / stock.length;
+    let scaleY = 350 / stock.width;
+    let left = p.x * scaleX;
+    let top = p.y * scaleY;
+    let pw = p.length * scaleX;
+    let ph = p.width * scaleY;
+
+    html += `<div class="cut-part" style="left: ${left}px; top: ${top}px; width: ${pw}px; height: ${ph}px;" title="${p.name}: ${p.length}x${p.width}mm">`;
+    html += `${p.name}<br>${p.length}x${p.width}`;
+    html += `</div>`;
+   });
+
+   html += `</div>`; // end visual-sheet
+   html += `<p style="color: green; font-weight: bold; margin-top: 10px;">✔ Successfully optimized with kerf spacing.</p>`;
+   html += `</div>`; // end sheet-box
+
+   pageDiv.innerHTML = html;
+   container.appendChild(pageDiv);
+   globalSheetCount++;
+  });
  }
 
  document.getElementById("resultSection").style.display = "block";
