@@ -19,7 +19,7 @@
   .pdf-page { background: white; border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; page-break-after: always; }
   .sheet-box { border: 2px solid #14233C; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 6px; position: relative; }
   
-  /* Visual Sheet Layout Canvas / Box Styling */
+  /* Perfect Scaled Visual Sheet Layout */
   .visual-sheet {
    width: 100%;
    max-width: 700px;
@@ -28,23 +28,23 @@
    background: #fff;
    position: relative;
    margin: 15px auto;
-   box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+   box-sizing: border-box;
+   overflow: hidden;
   }
   .cut-part {
    position: absolute;
-   border: 1.5px solid #2c3e50;
+   border: 1.5px solid #1a252f;
    background: #3498db;
    color: white;
-   font-size: 11px;
+   font-size: 10px;
    font-weight: bold;
    display: flex;
    align-items: center;
    justify-content: center;
    text-align: center;
    overflow: hidden;
-   padding: 2px;
    box-sizing: border-box;
-   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
  </style>
 </head>
@@ -52,7 +52,7 @@
 
 <div class="container">
  <h2>Flazzor Interiors - CutList Optimizer</h2>
- <p style="color: #666;">Manage stock sheets and generate 8x4 / standard sheet cutting layouts with visual diagrams and PDF export.</p>
+ <p style="color: #666;">Manage stock sheets and generate 8x4 / standard sheet cutting layouts with visual diagrams.</p>
  
  <h3>1. Stock Material Master (Saved Automatically)</h3>
  <table id="stockTable">
@@ -165,7 +165,7 @@ function updateMaterialDropdowns() {
  });
 }
 
-function addPanelRow(name="Wardrobe Side", l=600, w=450, q=4, mat="", rotate=true) {
+function addPanelRow(name="", l="", w="", q="", mat="", rotate=true) {
  let tbody = document.getElementById("panelsTable").getElementsByTagName('tbody')[0];
  let row = tbody.insertRow();
  let stockList = getStoredStock();
@@ -176,10 +176,10 @@ function addPanelRow(name="Wardrobe Side", l=600, w=450, q=4, mat="", rotate=tru
  });
 
  row.innerHTML = `
-  <td><input type="text" value="${name}"></td>
-  <td><input type="number" value="${l}"></td>
-  <td><input type="number" value="${w}"></td>
-  <td><input type="number" value="${q}" style="width:60px;"></td>
+  <td><input type="text" value="${name}" placeholder="Part Name"></td>
+  <td><input type="number" value="${l}" placeholder="Length"></td>
+  <td><input type="number" value="${w}" placeholder="Width"></td>
+  <td><input type="number" value="${q}" placeholder="Qty" style="width:60px;"></td>
   <td><select class="material-select">${optionsHtml}</select></td>
   <td><input type="checkbox" ${rotate ? 'checked' : ''}></td>
   <td><button class="delete-btn" onclick="this.closest('tr').remove()">Delete</button></td>
@@ -217,8 +217,6 @@ function optimizeCuts() {
   if (pLen <= 0 || pWid <= 0 || pQty <= 0) continue;
 
   if (!panelsByMaterial[mat]) panelsByMaterial[mat] = [];
-  
-  // Expand individual pieces based on Qty
   for(let q=0; q<pQty; q++) {
    panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, rotate: canRotate });
   }
@@ -232,7 +230,6 @@ function optimizeCuts() {
   let stock = stockMap[mat] || { length: 2440, width: 1220 };
   let allParts = panelsByMaterial[mat];
 
-  // Simple Bin Packing / Sheet Nesting simulation
   let sheets = [];
   let currentSheetParts = [];
   let cursorX = kerf;
@@ -243,12 +240,10 @@ function optimizeCuts() {
    let l = part.length;
    let w = part.width;
 
-   // Check if rotation fits better or needed
    let fitsNormal = (cursorX + l + kerf <= stock.length) && (cursorY + w + kerf <= stock.width);
    let fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
 
    if (!fitsNormal && !fitsRotated) {
-    // Move to next row in same sheet
     cursorX = kerf;
     cursorY += rowMaxHeight + kerf;
     rowMaxHeight = 0;
@@ -257,7 +252,6 @@ function optimizeCuts() {
     fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
 
     if (!fitsNormal && !fitsRotated) {
-     // Push current sheet and start new sheet
      sheets.push(currentSheetParts);
      currentSheetParts = [];
      cursorX = kerf;
@@ -289,7 +283,6 @@ function optimizeCuts() {
    sheets.push(currentSheetParts);
   }
 
-  // Render each generated sheet
   sheets.forEach((sheetParts, sIdx) => {
    let pageDiv = document.createElement('div');
    pageDiv.className = "pdf-page";
@@ -299,13 +292,12 @@ function optimizeCuts() {
    html += `<div class="sheet-box">`;
    html += `<h4>Sheet # ${globalSheetCount} Layout (${stock.length} x ${stock.width} mm) - Contains ${sheetParts.length} Panels</h4>`;
    
-   // Visual canvas representation container
-   html += `<div class="visual-sheet" id="sheet_canvas_${globalSheetCount}">`;
+   html += `<div class="visual-sheet">`;
    
+   let scaleX = 700 / stock.length;
+   let scaleY = 350 / stock.width;
+
    sheetParts.forEach(p => {
-    // Scale coordinates for 700x350 visual box
-    let scaleX = 700 / stock.length;
-    let scaleY = 350 / stock.width;
     let left = p.x * scaleX;
     let top = p.y * scaleY;
     let pw = p.length * scaleX;
@@ -316,9 +308,9 @@ function optimizeCuts() {
     html += `</div>`;
    });
 
-   html += `</div>`; // end visual-sheet
-   html += `<p style="color: green; font-weight: bold; margin-top: 10px;">✔ Successfully optimized with kerf spacing.</p>`;
-   html += `</div>`; // end sheet-box
+   html += `</div>`;
+   html += `<p style="color: green; font-weight: bold; margin-top: 10px;">✔ Successfully optimized within sheet boundaries.</p>`;
+   html += `</div>`;
 
    pageDiv.innerHTML = html;
    container.appendChild(pageDiv);
@@ -332,8 +324,7 @@ function optimizeCuts() {
 
 window.onload = function() {
  loadStockTable();
- addPanelRow("Wardrobe Side", 600, 450, 4, "Plywood (8x4 ft)", true);
- addPanelRow("Shelf", 800, 400, 3, "Plywood (8x4 ft)", true);
+ addPanelRow(); // Clean empty row
 };
 </script>
 
