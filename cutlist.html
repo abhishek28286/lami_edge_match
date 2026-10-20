@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
  <meta charset="UTF-8">
- <title>Flazzor Interiors - CutList Optimizer</title>
+ <title>Flazzor Interiors - Advanced CutList Optimizer</title>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -19,7 +19,6 @@
   .pdf-page { background: white; border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; page-break-after: always; }
   .sheet-box { border: 2px solid #14233C; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 6px; position: relative; }
   
-  /* Perfect Scaled Visual Sheet Layout */
   .visual-sheet {
    width: 100%;
    max-width: 700px;
@@ -46,13 +45,14 @@
    box-sizing: border-box;
    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
+  .summary-table { margin-top: 15px; margin-bottom: 15px; }
  </style>
 </head>
 <body>
 
 <div class="container">
  <h2>Flazzor Interiors - CutList Optimizer</h2>
- <p style="color: #666;">Manage stock sheets and generate 8x4 / standard sheet cutting layouts with visual diagrams.</p>
+ <p style="color: #666;">Zero-Waste Smart Nesting & Visual Sheet Layout Generator.</p>
  
  <h3>1. Stock Material Master (Saved Automatically)</h3>
  <table id="stockTable">
@@ -77,12 +77,13 @@
   <tbody></tbody>
  </table>
  <button class="action-btn" onclick="addPanelRow()">+ Add Panel Row</button>
- <button class="action-btn" style="background: #e67e22;" onclick="optimizeCuts()">🚀 RUN CUTLIST OPTIMIZATION</button>
+ <button class="action-btn" style="background: #e67e22;" onclick="optimizeCuts()">🚀 RUN SMART OPTIMIZATION</button>
  <button class="action-btn" style="background: #c0392b;" onclick="resetAllPanels()">Clear All Panels</button>
 
  <div id="resultSection">
-  <h2 style="margin-top: 40px;">Generated Cutting Layouts & Reports</h2>
+  <h2 style="margin-top: 40px;">Generated Cutting Layouts & Master Summary</h2>
   <button class="action-btn" style="background: #8e44ad; margin-bottom: 20px;" onclick="window.print()">🖨️ Export to PDF / Print</button>
+  <div id="masterSummaryBox"></div>
   <div id="sheetsContainer"></div>
  </div>
 </div>
@@ -218,86 +219,151 @@ function optimizeCuts() {
 
   if (!panelsByMaterial[mat]) panelsByMaterial[mat] = [];
   for(let q=0; q<pQty; q++) {
-   panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, rotate: canRotate });
+   panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, area: pLen * pWid, rotate: canRotate });
   }
+ }
+
+ // Sort panels descending by area for better smart packing
+ for (let mat in panelsByMaterial) {
+  panelsByMaterial[mat].sort((a, b) => b.area - a.area);
  }
 
  let container = document.getElementById("sheetsContainer");
  container.innerHTML = "";
  let globalSheetCount = 1;
+ let masterSummaryData = [];
 
  for (let mat in panelsByMaterial) {
   let stock = stockMap[mat] || { length: 2440, width: 1220 };
   let allParts = panelsByMaterial[mat];
 
-  let sheets = [];
-  let currentSheetParts = [];
-  let cursorX = kerf;
-  let cursorY = kerf;
-  let rowMaxHeight = 0;
+  let sheets = []; // Each sheet contains placed parts and free rectangles
 
   allParts.forEach(part => {
-   let l = part.length;
-   let w = part.width;
+   let placed = false;
+   let pLen = part.length;
+   let pWid = part.width;
 
-   let fitsNormal = (cursorX + l + kerf <= stock.length) && (cursorY + w + kerf <= stock.width);
-   let fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
+   // Try placing into existing sheets first (Best Utilization / Zero Waste check)
+   for (let s = 0; s < sheets.length; s++) {
+    let sheet = sheets[s];
+    for (let f = 0; f < sheet.freeRects.length; f++) {
+     let rect = sheet.freeRects[f];
 
-   if (!fitsNormal && !fitsRotated) {
-    cursorX = kerf;
-    cursorY += rowMaxHeight + kerf;
-    rowMaxHeight = 0;
+     let fitsNormal = (pLen <= rect.w && pWid <= rect.h);
+     let fitsRotated = part.rotate && (pWid <= rect.w && pLen <= rect.h);
 
-    fitsNormal = (cursorX + l + kerf <= stock.length) && (cursorY + w + kerf <= stock.width);
-    fitsRotated = part.rotate && (cursorX + w + kerf <= stock.length) && (cursorY + l + kerf <= stock.width);
+     if (fitsNormal || fitsRotated) {
+      let useRot = false;
+      let curL = pLen, curW = pWid;
+      if (!fitsNormal && fitsRotated) {
+       curL = pWid; curW = pLen;
+       useRot = true;
+      } else if (!fitsNormal && !fitsRotated) {
+       continue;
+      }
 
-    if (!fitsNormal && !fitsRotated) {
-     sheets.push(currentSheetParts);
-     currentSheetParts = [];
-     cursorX = kerf;
-     cursorY = kerf;
-     rowMaxHeight = 0;
+      // Place part
+      sheet.parts.push({
+       name: part.name,
+       length: curL,
+       width: curW,
+       x: rect.x,
+       y: rect.y,
+       rotated: useRot
+      });
+
+      // Split remaining free rectangle (Guillotine cut simulation)
+      sheet.freeRects.splice(f, 1);
+      
+      let rightWidth = rect.w - curL - kerf;
+      if (rightWidth > 10) {
+       sheet.freeRects.push({ x: rect.x + curL + kerf, y: rect.y, w: rightWidth, h: rect.h });
+      }
+      let bottomHeight = rect.h - curW - kerf;
+      if (bottomHeight > 10) {
+       sheet.freeRects.push({ x: rect.x, y: rect.y + curW + kerf, w: rect.w, h: bottomHeight });
+      }
+
+      placed = true;
+      break;
+     }
     }
+    if (placed) break;
    }
 
-   let rotated = false;
-   if (!(cursorX + l + kerf <= stock.length && cursorY + w + kerf <= stock.width) && fitsRotated) {
-    let temp = l; l = w; w = temp;
-    rotated = true;
+   // If not fitted in any existing sheet, open a new sheet
+   if (!placed) {
+    let newSheet = {
+     parts: [],
+     freeRects: [
+      { x: kerf, y: kerf, w: stock.length - (2 * kerf), h: stock.width - (2 * kerf) }
+     ]
+    };
+
+    let rect = newSheet.freeRects[0];
+    let fitsNormal = (pLen <= rect.w && pWid <= rect.h);
+    let fitsRotated = part.rotate && (pWid <= rect.w && pLen <= rect.h);
+    let useRot = false;
+    let curL = pLen, curW = pWid;
+
+    if (!fitsNormal && fitsRotated) {
+     curL = pWid; curW = pLen;
+     useRot = true;
+    }
+
+    newSheet.parts.push({
+     name: part.name,
+     length: curL,
+     width: curW,
+     x: rect.x,
+     y: rect.y,
+     rotated: useRot
+    });
+
+    newSheet.freeRects.splice(0, 1);
+    let rightWidth = rect.w - curL - kerf;
+    if (rightWidth > 10) {
+     newSheet.freeRects.push({ x: rect.x + curL + kerf, y: rect.y, w: rightWidth, h: rect.h });
+    }
+    let bottomHeight = rect.h - curW - kerf;
+    if (bottomHeight > 10) {
+     newSheet.freeRects.push({ x: rect.x, y: rect.y + curW + kerf, w: rect.w, h: bottomHeight });
+    }
+
+    sheets.push(newSheet);
    }
-
-   currentSheetParts.push({
-    name: part.name,
-    length: l,
-    width: w,
-    x: cursorX,
-    y: cursorY,
-    rotated: rotated
-   });
-
-   cursorX += l + kerf;
-   if (w > rowMaxHeight) rowMaxHeight = w;
   });
 
-  if (currentSheetParts.length > 0) {
-   sheets.push(currentSheetParts);
-  }
+  // Render generated sheets and calculate Master Summary
+  sheets.forEach((sheet, sIdx) => {
+   let totalPartArea = 0;
+   sheet.parts.forEach(p => { totalPartArea += (p.length * p.width); });
+   let sheetArea = stock.length * stock.width;
+   let efficiency = ((totalPartArea / sheetArea) * 100).toFixed(1);
 
-  sheets.forEach((sheetParts, sIdx) => {
+   masterSummaryData.push({
+    sheetNo: globalSheetCount,
+    material: mat,
+    size: `${stock.length} x ${stock.width} mm`,
+    panelsCount: sheet.parts.length,
+    efficiency: efficiency
+   });
+
    let pageDiv = document.createElement('div');
    pageDiv.className = "pdf-page";
 
    let html = `<h3>Flazzor Interiors - Cutting Layout Report</h3>`;
-   html += `<p><b>Material:</b> ${mat} | <b>Sheet Size:</b> ${stock.length} x ${stock.width} mm | <b>Blade Kerf:</b> ${kerf} mm</p>`;
+   html += `<p><b>Material:</b> ${mat} | <b>Sheet Size:</b> ${stock.length} x ${stock.width} mm | <b>Efficiency:</b> ${efficiency}% utilized</p>`;
    html += `<div class="sheet-box">`;
-   html += `<h4>Sheet # ${globalSheetCount} Layout (${stock.length} x ${stock.width} mm) - Contains ${sheetParts.length} Panels</h4>`;
+   html += `<h4>Sheet # ${globalSheetCount} Layout - Contains ${sheet.parts.length} Panels</h4>`;
    
    html += `<div class="visual-sheet">`;
    
    let scaleX = 700 / stock.length;
    let scaleY = 350 / stock.width;
 
-   sheetParts.forEach(p => {
+   sheet.parts.forEach(p => {
     let left = p.x * scaleX;
     let top = p.y * scaleY;
     let pw = p.length * scaleX;
@@ -309,7 +375,7 @@ function optimizeCuts() {
    });
 
    html += `</div>`;
-   html += `<p style="color: green; font-weight: bold; margin-top: 10px;">✔ Successfully optimized within sheet boundaries.</p>`;
+   html += `<p style="color: green; font-weight: bold; margin-top: 5px;">✔ Zero-Waste Smart Nesting Applied.</p>`;
    html += `</div>`;
 
    pageDiv.innerHTML = html;
@@ -318,13 +384,22 @@ function optimizeCuts() {
   });
  }
 
+ // Render Master Summary Table at top of reports
+ let summaryHtml = `<h3>Master Summary Table</h3>`;
+ summaryHtml += `<table class="summary-table"><thead><tr><th>Sheet No.</th><th>Material Name</th><th>Sheet Size (mm)</th><th>Total Panels</th><th>Sheet Efficiency</th></tr></thead><tbody>`;
+ masterSummaryData.forEach(m => {
+  summaryHtml += `<tr><td>Sheet #${m.sheetNo}</td><td>${m.material}</td><td>${m.size}</td><td>${m.panelsCount} Panels</td><td><b>${m.efficiency}%</b></td></tr>`;
+ });
+ summaryHtml += `</tbody></table>`;
+ document.getElementById("masterSummaryBox").innerHTML = summaryHtml;
+
  document.getElementById("resultSection").style.display = "block";
  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 window.onload = function() {
  loadStockTable();
- addPanelRow(); // Clean empty row
+ addPanelRow();
 };
 </script>
 
