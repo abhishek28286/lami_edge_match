@@ -2,10 +2,8 @@
 import pickle
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, redirect, send_file, send_from_directory
+from flask import Flask, request, jsonify, redirect, send_from_directory
 from flask_cors import CORS
-import io
-import urllib.request
 
 app = Flask(__name__)
 CORS(app)
@@ -29,9 +27,8 @@ def load_data():
                     loaded_all_laminates = data.get('all_laminates', [])
                 elif isinstance(data, list):
                     loaded_all_laminates = data
-            print(f"Loaded {len(loaded_all_laminates)} laminates index.")
     except Exception as e:
-        print(f"Error loading laminates index: {e}")
+        print(f"Error: {e}")
 
     try:
         if os.path.exists(edge_path):
@@ -41,24 +38,21 @@ def load_data():
                     loaded_edge_swatches = data.get('all_edge_swatches', []) or data.get('edge_swatches', [])
                 elif isinstance(data, list):
                     loaded_edge_swatches = data
-            print(f"Loaded {len(loaded_edge_swatches)} edge swatches index.")
     except Exception as e:
-        print(f"Error loading edge swatches index: {e}")
+        print(f"Error: {e}")
 
 load_data()
 
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        "status": "Flazzor Interior Backend is Running with Supabase Cloud Storage!",
+        "status": "Flazzor Interior Backend is Running!",
         "laminates_loaded": len(loaded_all_laminates),
         "swatches_loaded": len(loaded_edge_swatches)
     }), 200
 
-# ==================== CUTLIST OPTIMIZER HTML ROUTE ====================
 @app.route('/cutlist_optimizer', methods=['GET'])
 def cutlist_optimizer():
-    # app.py के ही फोल्डर में रखी cutlist.html को सर्व करेगा
     return send_from_directory('.', 'cutlist.html')
 
 @app.route('/get_brands', methods=['GET'])
@@ -72,6 +66,39 @@ def get_brands():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/get_laminate_list', methods=['GET'])
+def get_laminate_list():
+    brand = request.args.get('brand')
+    if not brand:
+        return jsonify({'error': 'Brand is required'}), 400
+    try:
+        brand_items = []
+        for item in loaded_all_laminates:
+            if str(item.get('brand', '')).strip() == str(brand).strip():
+                brand_items.append({
+                    'filename': item.get('filename', ''),
+                    'name': item.get('name', ''),
+                    'brand': item.get('brand', ''),
+                    'category': item.get('category', 'solid')
+                })
+        return jsonify({'items': brand_items}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_laminate_image', methods=['GET'])
+def get_laminate_image():
+    brand = request.args.get('brand')
+    category = request.args.get('category', 'solid')
+    filename = request.args.get('filename')
+    
+    if not brand or not filename:
+        return jsonify({'error': 'Missing parameters'}), 400
+        
+    target_path = f"{brand}/{category}/{filename}" if not filename.startswith(brand) else filename
+    safe_path = target_path.replace("[", "_").replace("]", "_")
+    cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_path}"
+    return redirect(cloud_url)
 
 @app.route('/match_laminate', methods=['POST'])
 def match_laminate():
@@ -87,7 +114,7 @@ def match_laminate():
         file = request.files['image']
         img = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
         if img is None:
-            return jsonify({'error': 'Invalid image format'}), 400
+            return jsonify({'error': 'Invalid image'}), 400
 
         h, w, _ = img.shape
         patch = img[max(0, int(crop_y*h)-30):min(h, int(crop_y*h)+30), max(0, int(crop_x*w)-30):min(w, int(crop_x*w)+30)]
@@ -127,7 +154,7 @@ def match_uploaded():
         file = request.files['image']
         img = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
         if img is None:
-            return jsonify({'error': 'Invalid image format'}), 400
+            return jsonify({'error': 'Invalid image'}), 400
 
         h, w, _ = img.shape
         patch = img[max(0, int(crop_y*h)-30):min(h, int(crop_y*h)+30), max(0, int(crop_x*w)-30):min(w, int(crop_x*w)+30)]
