@@ -15,7 +15,7 @@ dependencies:
   path_provider: ^2.1.2
   permission_handler: ^11.3.0
   webview_flutter: ^4.4.2
-  shared_preferences: ^2.2.2  # 👈 इसे जोड़ लें
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,4 +31,3 @@ flutter:
     - assets/pegasus.jpg
     - assets/e3.jpg
     - assets/advance.jpg
-    - assets/images/

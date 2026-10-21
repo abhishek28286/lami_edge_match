@@ -28,7 +28,7 @@ def load_data():
                 elif isinstance(data, list):
                     loaded_all_laminates = data
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error loading laminates: {e}")
 
     try:
         if os.path.exists(edge_path):
@@ -39,7 +39,7 @@ def load_data():
                 elif isinstance(data, list):
                     loaded_edge_swatches = data
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error loading edge swatches: {e}")
 
 load_data()
 
@@ -86,18 +86,37 @@ def get_laminate_list():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/get_laminate_image', methods=['GET'])
-def get_laminate_image():
+@app.route('/get_edge_list', methods=['GET'])
+def get_edge_list():
     brand = request.args.get('brand')
-    category = request.args.get('category', 'solid')
-    filename = request.args.get('filename')
-    
-    if not brand or not filename:
-        return jsonify({'error': 'Missing parameters'}), 400
-        
+    if not brand:
+        return jsonify({'error': 'Brand is required'}), 400
+    try:
+        brand_items = []
+        for item in loaded_edge_swatches:
+            if str(item.get('brand', '')).strip() == str(brand).strip():
+                brand_items.append({
+                    'filename': item.get('filename', ''),
+                    'name': item.get('name', ''),
+                    'brand': item.get('brand', ''),
+                    'category': item.get('category', 'solid')
+                })
+        return jsonify({'items': brand_items}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/laminate/<brand>/<category>/<filename>', methods=['GET'])
+def get_lam_image(brand, category, filename):
     target_path = f"{brand}/{category}/{filename}" if not filename.startswith(brand) else filename
     safe_path = target_path.replace("[", "_").replace("]", "_")
     cloud_url = f"{SUPABASE_PUBLIC_URL}/laminate/{safe_path}"
+    return redirect(cloud_url)
+
+@app.route('/edge/<brand>/<category>/<filename>', methods=['GET'])
+def get_edge_image(brand, category, filename):
+    target_path = f"{brand}/{category}/{filename}" if not filename.startswith(brand) else filename
+    safe_path = target_path.replace("[", "_").replace("]", "_")
+    cloud_url = f"{SUPABASE_PUBLIC_URL}/edge/{safe_path}"
     return redirect(cloud_url)
 
 @app.route('/match_laminate', methods=['POST'])
