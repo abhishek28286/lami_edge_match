@@ -2,72 +2,219 @@
 <html lang="hi">
 <head>
  <meta charset="UTF-8">
- <title>Flazzor Interiors - Advanced CutList Optimizer</title>
+ <title>Flazzor Interiors - CutList Optimizer Pro</title>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
   h2 { color: #14233C; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
   h3 { color: #14233C; margin-top: 25px; }
   table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px; }
   th { background: #14233C; color: white; }
   input, select { padding: 6px; font-size: 14px; width: 90%; box-sizing: border-box; }
   button.action-btn { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; margin-bottom: 5px; display: inline-block; font-size: 14px; }
   button.action-btn:hover { opacity: 0.9; }
   button.delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-  #resultSection { display: none; margin-top: 30px; }
-  .pdf-page { background: white; border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; page-break-after: always; }
-  .sheet-box { border: 2px solid #14233C; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 6px; position: relative; }
   
-  .visual-sheet {
+  #resultSection { display: none; margin-top: 30px; }
+  
+  /* 🌟 ADVERTISEMENT BANNER SLOTS (Screen Only, Hidden in Print/PDF) */
+  .ad-banner-slot {
    width: 100%;
-   max-width: 700px;
-   height: 350px;
-   border: 3px solid #14233C;
-   background: #fff;
-   position: relative;
-   margin: 15px auto;
-   box-sizing: border-box;
-   overflow: hidden;
-  }
-  .cut-part {
-   position: absolute;
-   border: 1.5px solid #1a252f;
-   background: #3498db;
-   color: white;
-   font-size: 10px;
-   font-weight: bold;
+   max-width: 728px;
+   height: 90px;
+   background: #eaecee;
+   border: 2px dashed #bdc3c7;
+   color: #7f8c8d;
    display: flex;
    align-items: center;
    justify-content: center;
+   font-size: 12px;
+   font-weight: bold;
+   margin: 15px auto;
+   border-radius: 4px;
+   text-transform: uppercase;
+   letter-spacing: 1px;
+  }
+
+  /* 🌟 PROFESSIONAL PAGE-WISE SCREEN & PRINT STYLING */
+  .pdf-page {
+   background: white;
+   width: 100%;
+   min-height: 95vh;
+   padding: 20px;
+   box-sizing: border-box;
+   page-break-after: always;
+   break-after: page;
+   text-align: center;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: flex-start;
+   border-bottom: 2px solid #ddd;
+   margin-bottom: 20px;
+  }
+  .summary-page {
+   text-align: left;
+   display: block;
+  }
+  
+  /* 🌟 EXTERNAL SIDE-PANE LAYOUT */
+  .sheet-wrapper {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-start;
+   justify-content: center;
+   gap: 20px;
+   margin: 10px auto;
+  }
+  
+  .operator-ref-pane {
+   background: #fff;
+   border: 2px solid #14233C;
+   padding: 10px;
+   border-radius: 6px;
+   text-align: left;
+   font-size: 11px;
+   width: 160px;
+   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .operator-ref-pane h5 { margin: 0 0 6px 0; font-size: 12px; color: #14233C; border-bottom: 1.5px solid #3498db; padding-bottom: 3px; text-align: center; }
+  .ref-item { margin-bottom: 4px; font-family: monospace; font-weight: bold; color: #2c3e50; }
+
+  .sheet-box {
+   border: 2px solid #14233C;
+   padding: 10px;
+   background: #fafafa;
+   border-radius: 6px;
+  }
+  .visual-sheet {
+   width: 360px;
+   height: 720px;
+   border: 3px solid #14233C;
+   background: #fff;
+   position: relative;
+   box-sizing: border-box;
+   overflow: hidden;
+  }
+  
+  /* 🌟 PERIPHERY LABEL STYLING WITH ALPHA TAGS */
+  .cut-part {
+   position: absolute;
+   border: 1.5px solid #1a252f;
+   background: #2980b9;
+   color: white;
+   font-size: 14px;
+   font-weight: bold;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: space-between;
    text-align: center;
    overflow: hidden;
    box-sizing: border-box;
    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+   padding: 2px;
   }
+  .alpha-tag { font-size: 15px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 3px; }
+  .part-dim-top { font-size: 9px; color: #f1c40f; font-weight: bold; }
+  .part-dim-side { font-size: 9px; color: #f1c40f; font-weight: bold; writing-mode: vertical-rl; transform: rotate(180deg); }
+
   .summary-table { margin-top: 15px; margin-bottom: 15px; }
+
+  /* 🌟 SIMULATED INTERSTITIAL AD POPUP */
+  #adModal {
+   display: none;
+   position: fixed;
+   z-index: 9999;
+   left: 0; top: 0; width: 100%; height: 100%;
+   background: rgba(0,0,0,0.7);
+   align-items: center;
+   justify-content: center;
+  }
+  .ad-modal-content {
+   background: white;
+   padding: 30px;
+   border-radius: 8px;
+   text-align: center;
+   width: 320px;
+   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+
+  @media print {
+   body * { visibility: hidden; }
+   #resultSection, #resultSection * { visibility: visible; }
+   #resultSection { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; display: block !important; }
+   .no-print, .ad-banner-slot { display: none !important; }
+   .pdf-page { page-break-after: always; break-after: page; height: 100vh; border-bottom: none; }
+  }
  </style>
 </head>
 <body>
 
+<!-- 🌟 5-SECOND SHORT AD POPUP MODAL -->
+<div id="adModal">
+ <div class="ad-modal-content">
+  <h3 style="color: #c0392b; margin-top:0;">Sponsored Ad</h3>
+  <div style="background: #f1f2f6; height: 150px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555; margin-bottom: 15px; border: 1px solid #ddd;">
+   Flazzor Interiors Partner Ad<br>(5 Sec Interstitial)
+  </div>
+  <p id="adTimerText" style="font-size: 14px; font-weight: bold; color: #e67e22;">Closing in 5 seconds...</p>
+  <button id="closeAdBtn" class="action-btn" style="background: #95a5a6; cursor: not-allowed;" disabled>Skip Ad</button>
+ </div>
+</div>
+
 <div class="container">
- <h2>Flazzor Interiors - CutList Optimizer</h2>
- <p style="color: #666;">Zero-Waste Smart Nesting & Visual Sheet Layout Generator.</p>
+ <h2>Flazzor Interiors - CutList Optimizer Pro</h2>
+ <p style="color: #666;">Portrait Layout (8x4 ft), Tab-Navigation, Multi-Banner Scroll Monetization.</p>
  
- <h3>1. Stock Material Master (Saved Automatically)</h3>
+ <!-- Top Banner Ad Slot -->
+ <div class="ad-banner-slot">📢 Advertisement Banner (728x90)</div>
+
+ <h3>1. Stock Material Master</h3>
  <table id="stockTable">
   <thead>
    <tr><th>Length (mm)</th><th>Width (mm)</th><th>Default Qty</th><th>Material Name</th><th>Action</th></tr>
   </thead>
-  <tbody></tbody>
+  <tbody>
+   <tr>
+    <td><input type="number" value="2440"></td>
+    <td><input type="number" value="1220"></td>
+    <td><input type="number" value="10"></td>
+    <td><input type="text" value="Plywood (8x4 ft)"></td>
+    <td><button type="button" class="delete-btn" onclick="deleteStockRow(this)">Delete</button></td>
+   </tr>
+   <tr>
+    <td><input type="number" value="2135"></td>
+    <td><input type="number" value="1220"></td>
+    <td><input type="number" value="10"></td>
+    <td><input type="text" value="Plywood (7x4 ft)"></td>
+    <td><button type="button" class="delete-btn" onclick="deleteStockRow(this)">Delete</button></td>
+   </tr>
+   <tr>
+    <td><input type="number" value="2440"></td>
+    <td><input type="number" value="1220"></td>
+    <td><input type="number" value="10"></td>
+    <td><input type="text" value="HDHMR Board"></td>
+    <td><button type="button" class="delete-btn" onclick="deleteStockRow(this)">Delete</button></td>
+   </tr>
+  </tbody>
  </table>
- <button class="action-btn" onclick="addStockRow()">+ Add Stock Material</button>
- <button class="action-btn" style="background: #2980b9;" onclick="saveStockToStorage()">💾 Save Stock</button>
+ <button type="button" class="action-btn" onclick="addStockRow()">+ Add Stock Material</button>
+ <button type="button" class="action-btn" style="background: #2980b9;" onclick="refreshStockDropdowns()">🔄 Refresh Materials</button>
 
- <h3 style="margin-top: 30px;">2. Required Panels List</h3>
- <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+ <h3 style="margin-top: 30px;">2. Required Panels List (Tab Navigation Active)</h3>
+ <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
   <label><b>Blade Kerf (mm):</b></label>
-  <input type="number" id="bladeKerf" value="3" style="width: 80px;">
+  <input type="number" id="bladeKerf" value="3" style="width: 70px;">
+  
+  <button type="button" class="action-btn" style="background: #16a085;" onclick="exportPanelsCSV()">📥 Export CSV</button>
+  
+  <label class="action-btn" style="background: #d35400; margin: 0; cursor: pointer;">
+   📤 Import File (CSV/PFV) <input type="file" id="csvFileInput" accept=".csv,.pfv,.txt" style="display:none;" onchange="importPanelsFile(event)">
+  </label>
+  
+  <button type="button" class="action-btn" style="background: #8e44ad;" onclick="loadSampleTestData()">⚡ Load Sample Test Data</button>
  </div>
 
  <table id="panelsTable">
@@ -76,66 +223,38 @@
   </thead>
   <tbody></tbody>
  </table>
- <button class="action-btn" onclick="addPanelRow()">+ Add Panel Row</button>
- <button class="action-btn" style="background: #e67e22;" onclick="optimizeCuts()">🚀 RUN SMART OPTIMIZATION</button>
- <button class="action-btn" style="background: #c0392b;" onclick="resetAllPanels()">Clear All Panels</button>
+ <button type="button" class="action-btn" onclick="addPanelRow()">+ Add Panel Row</button>
+ <button type="button" class="action-btn" style="background: #e67e22;" onclick="triggerAdAndOptimize()">🚀 RUN OPTIMIZATION</button>
+ <button type="button" class="action-btn" style="background: #c0392b;" onclick="resetAllPanels()">Clear All Panels</button>
+
+ <!-- Bottom Banner Ad Slot -->
+ <div class="ad-banner-slot">📢 Advertisement Banner (728x90)</div>
 
  <div id="resultSection">
-  <h2 style="margin-top: 40px;">Generated Cutting Layouts & Master Summary</h2>
-  <button class="action-btn" style="background: #8e44ad; margin-bottom: 20px;" onclick="window.print()">🖨️ Export to PDF / Print</button>
-  <div id="masterSummaryBox"></div>
-  <div id="sheetsContainer"></div>
+  <div style="text-align: right; margin-bottom: 15px;" class="no-print">
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="window.print()">🖨️ Export Clean PDF / Print</button>
+  </div>
+  <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-function getStoredStock() {
- let saved = localStorage.getItem('flazzor_stock_master');
- if (saved) {
-  try { let parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
- }
- let defaultStock = [
-  { length: 2440, width: 1220, qty: 10, material: "Plywood (8x4 ft)" },
-  { length: 2135, width: 1220, qty: 10, material: "Plywood (7x4 ft)" },
-  { length: 2440, width: 1220, qty: 10, material: "HDHMR Board" },
-  { length: 2440, width: 1220, qty: 10, material: "MDF Board" }
- ];
- localStorage.setItem('flazzor_stock_master', JSON.stringify(defaultStock));
- return defaultStock;
-}
-
-function saveStockToStorage() {
+function getStockList() {
  let tbody = document.getElementById("stockTable").getElementsByTagName('tbody')[0];
  let rows = tbody.rows;
  let stockList = [];
  for (let i = 0; i < rows.length; i++) {
   let inputs = rows[i].getElementsByTagName('input');
-  stockList.push({
-   length: parseFloat(inputs[0].value) || 2440,
-   width: parseFloat(inputs[1].value) || 1220,
-   qty: parseInt(inputs[2].value) || 10,
-   material: inputs[3].value.trim() || "Custom Board"
-  });
+  if(inputs.length >= 4) {
+   stockList.push({
+    length: parseFloat(inputs[0].value) || 2440,
+    width: parseFloat(inputs[1].value) || 1220,
+    qty: parseInt(inputs[2].value) || 10,
+    material: inputs[3].value.trim() || "Custom Board"
+   });
+  }
  }
- localStorage.setItem('flazzor_stock_master', JSON.stringify(stockList));
- alert("✅ Stock Master Saved Successfully!");
- loadStockTable();
- updateMaterialDropdowns();
-}
-
-function loadStockTable() {
- let tbody = document.getElementById("stockTable").getElementsByTagName('tbody')[0];
- tbody.innerHTML = "";
- getStoredStock().forEach(s => {
-  let row = tbody.insertRow();
-  row.innerHTML = `
-   <td><input type="number" value="${s.length}"></td>
-   <td><input type="number" value="${s.width}"></td>
-   <td><input type="number" value="${s.qty}"></td>
-   <td><input type="text" value="${s.material}"></td>
-   <td><button class="delete-btn" onclick="this.closest('tr').remove(); saveStockToStorage();">Delete</button></td>
-  `;
- });
+ return stockList;
 }
 
 function addStockRow() {
@@ -146,12 +265,18 @@ function addStockRow() {
   <td><input type="number" placeholder="1220"></td>
   <td><input type="number" placeholder="10"></td>
   <td><input type="text" placeholder="Material Name"></td>
-  <td><button class="delete-btn" onclick="this.closest('tr').remove()">Delete</button></td>
+  <td><button type="button" class="delete-btn" onclick="deleteStockRow(this)">Delete</button></td>
  `;
+ refreshStockDropdowns();
 }
 
-function updateMaterialDropdowns() {
- let stockList = getStoredStock();
+function deleteStockRow(btn) {
+ btn.closest('tr').remove();
+ refreshStockDropdowns();
+}
+
+function refreshStockDropdowns() {
+ let stockList = getStockList();
  let selects = document.querySelectorAll('.material-select');
  selects.forEach(sel => {
   let currentVal = sel.value;
@@ -169,7 +294,7 @@ function updateMaterialDropdowns() {
 function addPanelRow(name="", l="", w="", q="", mat="", rotate=true) {
  let tbody = document.getElementById("panelsTable").getElementsByTagName('tbody')[0];
  let row = tbody.insertRow();
- let stockList = getStoredStock();
+ let stockList = getStockList();
  let optionsHtml = "";
  stockList.forEach(s => {
   let selected = (s.material === mat) ? "selected" : "";
@@ -177,14 +302,30 @@ function addPanelRow(name="", l="", w="", q="", mat="", rotate=true) {
  });
 
  row.innerHTML = `
-  <td><input type="text" value="${name}" placeholder="Part Name"></td>
-  <td><input type="number" value="${l}" placeholder="Length"></td>
-  <td><input type="number" value="${w}" placeholder="Width"></td>
-  <td><input type="number" value="${q}" placeholder="Qty" style="width:60px;"></td>
-  <td><select class="material-select">${optionsHtml}</select></td>
-  <td><input type="checkbox" ${rotate ? 'checked' : ''}></td>
-  <td><button class="delete-btn" onclick="this.closest('tr').remove()">Delete</button></td>
+  <td><input type="text" value="${name}" placeholder="Part Name" class="p-input"></td>
+  <td><input type="number" value="${l}" placeholder="Length" class="p-input"></td>
+  <td><input type="number" value="${w}" placeholder="Width" class="p-input"></td>
+  <td><input type="number" value="${q}" placeholder="Qty" style="width:60px;" class="p-input"></td>
+  <td><select class="material-select p-input">${optionsHtml}</select></td>
+  <td><input type="checkbox" ${rotate ? 'checked' : ''} class="p-input"></td>
+  <td><button type="button" class="delete-btn" onclick="this.closest('tr').remove()">Delete</button></td>
  `;
+
+ let inputs = row.querySelectorAll('.p-input');
+ let lastInput = inputs[inputs.length - 1];
+ 
+ lastInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab' && !e.shiftKey) {
+   let currentRows = tbody.rows;
+   if (row === currentRows[currentRows.length - 1]) {
+    e.preventDefault();
+    addPanelRow();
+    let newRow = tbody.rows[tbody.rows.length - 1];
+    let firstNewInput = newRow.querySelector('.p-input');
+    if (firstNewInput) firstNewInput.focus();
+   }
+  }
+ });
 }
 
 function resetAllPanels() {
@@ -192,213 +333,505 @@ function resetAllPanels() {
  addPanelRow();
 }
 
-function optimizeCuts() {
+function loadSampleTestData() {
+ resetAllPanels();
+ let sampleData = [
+  { name: "Rafter Strip", l: 2400, w: 75, q: 35, mat: "Plywood (8x4 ft)", rot: true },
+  { name: "Wardrobe Side", l: 2100, w: 550, q: 6, mat: "Plywood (8x4 ft)", rot: true },
+  { name: "Shelf", l: 800, w: 450, q: 15, mat: "Plywood (8x4 ft)", rot: true },
+  { name: "Partition", l: 1200, w: 600, q: 8, mat: "Plywood (8x4 ft)", rot: true }
+ ];
+ let tbody = document.getElementById("panelsTable").getElementsByTagName('tbody')[0];
+ tbody.innerHTML = "";
+ sampleData.forEach(d => {
+  addPanelRow(d.name, d.l, d.w, d.q, d.mat, d.rot);
+ });
+ alert("⚡ Sample Test Data Loaded Successfully!");
+}
+
+function exportPanelsCSV() {
  let rows = document.getElementById("panelsTable").getElementsByTagName('tbody')[0].rows;
- if (rows.length === 0) {
-  alert("Pehle kam se kam ek panel add karein!");
-  return;
- }
-
- let kerf = parseFloat(document.getElementById("bladeKerf").value) || 3;
- let stockMap = {};
- getStoredStock().forEach(s => { stockMap[s.material] = s; });
-
- let panelsByMaterial = {};
+ if (rows.length === 0) { alert("No panels to export!"); return; }
+ let csvContent = "PartName,Length,Width,Qty,Material,Rotate\n";
  for (let i = 0; i < rows.length; i++) {
   let inputs = rows[i].getElementsByTagName('input');
   let select = rows[i].getElementsByTagName('select')[0];
-  
-  let pName = inputs[0].value.trim() || "Part";
-  let pLen = parseFloat(inputs[1].value) || 0;
-  let pWid = parseFloat(inputs[2].value) || 0;
-  let pQty = parseInt(inputs[3].value) || 0;
+  let pName = inputs[0].value.trim();
+  let pLen = inputs[1].value;
+  let pWid = inputs[2].value;
+  let pQty = inputs[3].value;
   let mat = select.value;
-  let canRotate = inputs[4].checked;
-
-  if (pLen <= 0 || pWid <= 0 || pQty <= 0) continue;
-
-  if (!panelsByMaterial[mat]) panelsByMaterial[mat] = [];
-  for(let q=0; q<pQty; q++) {
-   panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, area: pLen * pWid, rotate: canRotate });
-  }
+  let rotate = inputs[4].checked ? "yes" : "no";
+  csvContent += `"${pName}",${pLen},${pWid},${pQty},"${mat}",${rotate}\n`;
  }
+ let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+ let url = URL.createObjectURL(blob);
+ let link = document.createElement("a");
+ link.setAttribute("href", url);
+ link.setAttribute("download", "flazzor_cutlist_panels.csv");
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+ alert("✅ CSV File Exported Successfully!");
+}
 
- // Sort panels descending by area for better smart packing
- for (let mat in panelsByMaterial) {
-  panelsByMaterial[mat].sort((a, b) => b.area - a.area);
- }
-
- let container = document.getElementById("sheetsContainer");
- container.innerHTML = "";
- let globalSheetCount = 1;
- let masterSummaryData = [];
-
- for (let mat in panelsByMaterial) {
-  let stock = stockMap[mat] || { length: 2440, width: 1220 };
-  let allParts = panelsByMaterial[mat];
-
-  let sheets = []; // Each sheet contains placed parts and free rectangles
-
-  allParts.forEach(part => {
-   let placed = false;
-   let pLen = part.length;
-   let pWid = part.width;
-
-   // Try placing into existing sheets first (Best Utilization / Zero Waste check)
-   for (let s = 0; s < sheets.length; s++) {
-    let sheet = sheets[s];
-    for (let f = 0; f < sheet.freeRects.length; f++) {
-     let rect = sheet.freeRects[f];
-
-     let fitsNormal = (pLen <= rect.w && pWid <= rect.h);
-     let fitsRotated = part.rotate && (pWid <= rect.w && pLen <= rect.h);
-
-     if (fitsNormal || fitsRotated) {
-      let useRot = false;
-      let curL = pLen, curW = pWid;
-      if (!fitsNormal && fitsRotated) {
-       curL = pWid; curW = pLen;
-       useRot = true;
-      } else if (!fitsNormal && !fitsRotated) {
-       continue;
-      }
-
-      // Place part
-      sheet.parts.push({
-       name: part.name,
-       length: curL,
-       width: curW,
-       x: rect.x,
-       y: rect.y,
-       rotated: useRot
-      });
-
-      // Split remaining free rectangle (Guillotine cut simulation)
-      sheet.freeRects.splice(f, 1);
-      
-      let rightWidth = rect.w - curL - kerf;
-      if (rightWidth > 10) {
-       sheet.freeRects.push({ x: rect.x + curL + kerf, y: rect.y, w: rightWidth, h: rect.h });
-      }
-      let bottomHeight = rect.h - curW - kerf;
-      if (bottomHeight > 10) {
-       sheet.freeRects.push({ x: rect.x, y: rect.y + curW + kerf, w: rect.w, h: bottomHeight });
-      }
-
-      placed = true;
-      break;
+function importPanelsFile(event) {
+ let file = event.target.files[0];
+ if (!file) return;
+ 
+ let reader = new FileReader();
+ reader.onload = function(e) {
+  try {
+   let text = e.target.result;
+   let lines = text.split(/\r\n|\n/);
+   let tbody = document.getElementById("panelsTable").getElementsByTagName('tbody')[0];
+   tbody.innerHTML = "";
+   
+   let count = 0;
+   for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (!line) continue;
+    
+    let lowerLine = line.toLowerCase();
+    if (i === 0 && (lowerLine.includes('part') || lowerLine.includes('length') || lowerLine.includes('name'))) {
+     continue;
+    }
+    
+    let delimiter = line.includes('\t') ? '\t' : (line.includes(';') ? ';' : ',');
+    let parts = line.split(delimiter);
+    
+    if (parts.length >= 3) {
+     let pName = parts[0] ? parts[0].replace(/["']/g, "").trim() : "Part";
+     let pLen = parseFloat(parts[1]) || 0;
+     let pWid = parseFloat(parts[2]) || 0;
+     let pQty = parts[3] ? parseInt(parts[3]) || 1 : 1;
+     let mat = parts[4] ? parts[4].replace(/["']/g, "").trim() : "Plywood (8x4 ft)";
+     let rotate = parts[5] ? !parts[5].toLowerCase().includes("no") : true;
+     
+     if (pLen > 0 && pWid > 0) {
+      addPanelRow(pName, pLen, pWid, pQty, mat, rotate);
+      count++;
      }
     }
-    if (placed) break;
    }
+   
+   if (count > 0) {
+    alert(`✅ Successfully Imported ${count} Panels from File!`);
+   } else {
+    alert("⚠️ No valid panels found. Please check file format.");
+    addPanelRow();
+   }
+  } catch (err) {
+   alert("❌ Error reading file: " + err.message);
+   addPanelRow();
+  }
+  document.getElementById("csvFileInput").value = "";
+ };
+ 
+ reader.onerror = function() {
+  alert("❌ Failed to read file!");
+ };
+ 
+ reader.readAsText(file);
+}
 
-   // If not fitted in any existing sheet, open a new sheet
-   if (!placed) {
-    let newSheet = {
+// 🌟 5-SECOND AD TRIGGER BEFORE RUNNING OPTIMIZATION
+function triggerAdAndOptimize() {
+ let modal = document.getElementById("adModal");
+ let timerText = document.getElementById("adTimerText");
+ let closeBtn = document.getElementById("closeAdBtn");
+ 
+ modal.style.display = "flex";
+ let timeLeft = 5;
+ closeBtn.disabled = true;
+ closeBtn.style.background = "#95a5a6";
+ closeBtn.style.cursor = "not-allowed";
+ closeBtn.textContent = "Please wait...";
+
+ let countdown = setInterval(function() {
+  timeLeft--;
+  if (timeLeft > 0) {
+   timerText.textContent = `Closing in ${timeLeft} seconds...`;
+  } else {
+   clearInterval(countdown);
+   timerText.textContent = "Ad finished!";
+   closeBtn.disabled = false;
+   closeBtn.style.background = "#27ae60";
+   closeBtn.style.cursor = "pointer";
+   closeBtn.textContent = "Continue to Results ➔";
+  }
+ }, 1000);
+
+ closeBtn.onclick = function() {
+  modal.style.display = "none";
+  optimizeCuts();
+ };
+}
+
+// 🌟 LOCKED CUTTING ENGINE + MULTI-BANNER SCROLL MONETIZATION
+function optimizeCuts() {
+ try {
+  let rows = document.getElementById("panelsTable").getElementsByTagName('tbody')[0].rows;
+  if (rows.length === 0) {
+   alert("Pehle kam se kam ek panel add karein!");
+   return;
+  }
+
+  let kerf = parseFloat(document.getElementById("bladeKerf").value) || 3;
+  let stockMap = {};
+  getStockList().forEach(s => { stockMap[s.material] = s; });
+
+  let panelsByMaterial = {};
+  let totalEdgeBandingMM = 0;
+  let materialEdgeBandingMM = {};
+
+  for (let i = 0; i < rows.length; i++) {
+   let inputs = rows[i].getElementsByTagName('input');
+   let select = rows[i].getElementsByTagName('select')[0];
+   
+   let pName = inputs[0].value.trim() || "Part";
+   let pLen = parseFloat(inputs[1].value) || 0;
+   let pWid = parseFloat(inputs[2].value) || 0;
+   let pQty = parseInt(inputs[3].value) || 0;
+   let mat = select.value;
+   let canRotate = inputs[4].checked;
+
+   if (pLen <= 0 || pWid <= 0 || pQty <= 0) continue;
+
+   let partEdgeBanding = (2 * (pLen + pWid) * pQty);
+   totalEdgeBandingMM += partEdgeBanding;
+   materialEdgeBandingMM[mat] = (materialEdgeBandingMM[mat] || 0) + partEdgeBanding;
+
+   if (!panelsByMaterial[mat]) panelsByMaterial[mat] = [];
+   for(let q=0; q<pQty; q++) {
+    panelsByMaterial[mat].push({ name: pName, length: pLen, width: pWid, area: pLen * pWid, rotate: canRotate });
+   }
+  }
+
+  let uniqueSizeMap = {};
+  let alphaCounter = 0;
+  function getAlphaTag(l, w) {
+   let key = `${l}_${w}`;
+   if (!uniqueSizeMap[key]) {
+    uniqueSizeMap[key] = String.fromCharCode(65 + (alphaCounter % 26));
+    alphaCounter++;
+   }
+   return uniqueSizeMap[key];
+  }
+
+  for (let mat in panelsByMaterial) {
+   panelsByMaterial[mat].sort((a, b) => b.area - a.area);
+   panelsByMaterial[mat].forEach(p => {
+    p.alpha = getAlphaTag(p.length, p.width);
+   });
+  }
+
+  let reportContainer = document.getElementById("pdfReportContainer");
+  reportContainer.innerHTML = "";
+  
+  let globalSheetCount = 1;
+  let materialSheetCounts = {};
+  let allSheetReports = [];
+
+  for (let mat in panelsByMaterial) {
+   let stock = stockMap[mat] || { length: 2440, width: 1220 };
+   let allParts = panelsByMaterial[mat];
+
+   let sheetMaxW = stock.width;
+   let sheetMaxL = stock.length;
+   let sheets = [];
+
+   function createNewSheet() {
+    return {
      parts: [],
-     freeRects: [
-      { x: kerf, y: kerf, w: stock.length - (2 * kerf), h: stock.width - (2 * kerf) }
-     ]
+     freeRects: [{ x: 0, y: 0, w: sheetMaxW, h: sheetMaxL }]
     };
-
-    let rect = newSheet.freeRects[0];
-    let fitsNormal = (pLen <= rect.w && pWid <= rect.h);
-    let fitsRotated = part.rotate && (pWid <= rect.w && pLen <= rect.h);
-    let useRot = false;
-    let curL = pLen, curW = pWid;
-
-    if (!fitsNormal && fitsRotated) {
-     curL = pWid; curW = pLen;
-     useRot = true;
-    }
-
-    newSheet.parts.push({
-     name: part.name,
-     length: curL,
-     width: curW,
-     x: rect.x,
-     y: rect.y,
-     rotated: useRot
-    });
-
-    newSheet.freeRects.splice(0, 1);
-    let rightWidth = rect.w - curL - kerf;
-    if (rightWidth > 10) {
-     newSheet.freeRects.push({ x: rect.x + curL + kerf, y: rect.y, w: rightWidth, h: rect.h });
-    }
-    let bottomHeight = rect.h - curW - kerf;
-    if (bottomHeight > 10) {
-     newSheet.freeRects.push({ x: rect.x, y: rect.y + curW + kerf, w: rect.w, h: bottomHeight });
-    }
-
-    sheets.push(newSheet);
    }
-  });
 
-  // Render generated sheets and calculate Master Summary
-  sheets.forEach((sheet, sIdx) => {
-   let totalPartArea = 0;
-   sheet.parts.forEach(p => { totalPartArea += (p.length * p.width); });
-   let sheetArea = stock.length * stock.width;
-   let efficiency = ((totalPartArea / sheetArea) * 100).toFixed(1);
+   sheets.push(createNewSheet());
 
-   masterSummaryData.push({
-    sheetNo: globalSheetCount,
-    material: mat,
-    size: `${stock.length} x ${stock.width} mm`,
-    panelsCount: sheet.parts.length,
-    efficiency: efficiency
+   allParts.forEach(part => {
+    let pLen = part.length;
+    let pWid = part.width;
+    let placed = false;
+
+    let orientations = [{w: pWid, l: pLen, rot: false}];
+    if (part.rotate && (pLen !== pWid)) {
+     orientations.push({w: pLen, l: pWid, rot: true});
+    }
+
+    for (let s = 0; s < sheets.length; s++) {
+     let sheet = sheets[s];
+
+     for (let f = 0; f < sheet.freeRects.length; f++) {
+      let rect = sheet.freeRects[f];
+
+      for (let o = 0; o < orientations.length; o++) {
+       let oW = orientations[o].w;
+       let oL = orientations[o].l;
+       let oRot = orientations[o].rot;
+
+       let neededW = oW + kerf;
+       let neededL = oL + kerf;
+
+       if (neededW <= rect.w && neededL <= rect.h) {
+        sheet.parts.push({
+         name: part.name,
+         alpha: part.alpha,
+         length: oL,
+         width: oW,
+         x: rect.x + (kerf/2),
+         y: rect.y + (kerf/2),
+         rotated: oRot
+        });
+
+        let newRects = [];
+        sheet.freeRects.splice(f, 1);
+
+        sheet.freeRects.forEach(fr => {
+         if (!(rect.x + neededW <= fr.x || rect.x >= fr.x + fr.w || rect.y + neededL <= fr.y || rect.y >= fr.y + fr.h)) {
+          if (rect.x + neededW < fr.x + fr.w) {
+           newRects.push({ x: rect.x + neededW, y: fr.y, w: fr.x + fr.w - (rect.x + neededW), h: fr.h });
+          }
+          if (rect.x > fr.x) {
+           newRects.push({ x: fr.x, y: fr.y, w: rect.x - fr.x, h: fr.h });
+          }
+          if (rect.y + neededL < fr.y + fr.h) {
+           newRects.push({ x: fr.x, y: rect.y + neededL, w: fr.w, h: fr.y + fr.h - (rect.y + neededL) });
+          }
+          if (rect.y > fr.y) {
+           newRects.push({ x: fr.x, y: fr.y, w: fr.w, h: rect.y - fr.y });
+          }
+         } else {
+          newRects.push(fr);
+         }
+        });
+
+        newRects.push({ x: rect.x + neededW, y: rect.y, w: rect.w - neededW, h: rect.h });
+        newRects.push({ x: rect.x, y: rect.y + neededL, w: rect.w, h: rect.h - neededL });
+
+        sheet.freeRects = [];
+        newRects.forEach(nr => {
+         if (nr.w > 50 && nr.h > 50) {
+          let contained = false;
+          for (let i = 0; i < sheet.freeRects.length; i++) {
+           let existing = sheet.freeRects[i];
+           if (nr.x >= existing.x && nr.y >= existing.y && nr.x + nr.w <= existing.x + existing.w && nr.y + nr.h <= existing.y + existing.h) {
+            contained = true;
+            break;
+           }
+          }
+          if (!contained) sheet.freeRects.push(nr);
+         }
+        });
+
+        placed = true;
+        break;
+       }
+      }
+      if (placed) break;
+     }
+     if (placed) break;
+    }
+
+    if (!placed) {
+     let newSheet = createNewSheet();
+     let oW = orientations[0].w;
+     let oL = orientations[0].l;
+     let oRot = orientations[0].rot;
+
+     newSheet.parts.push({
+      name: part.name,
+      alpha: part.alpha,
+      length: oL,
+      width: oW,
+      x: kerf/2,
+      y: kerf/2,
+      rotated: oRot
+     });
+
+     let neededW = oW + kerf;
+     let neededL = oL + kerf;
+     newSheet.freeRects = [
+      { x: neededW, y: 0, w: sheetMaxW - neededW, h: sheetMaxL },
+      { x: 0, y: neededL, w: sheetMaxW, h: sheetMaxL - neededL }
+     ];
+
+     sheets.push(newSheet);
+    }
    });
 
+   // Last Sheet Sweeper
+   if (sheets.length > 1) {
+    let lastSheet = sheets[sheets.length - 1];
+    let lastSheetArea = 0;
+    lastSheet.parts.forEach(p => { lastSheetArea += (p.length * p.width); });
+    let sheetTotalArea = stock.length * stock.width;
+
+    if ((lastSheetArea / sheetTotalArea) < 0.88 || lastSheet.parts.length <= 5) {
+     let orphanParts = [...lastSheet.parts];
+     let canAbsorb = true;
+     let tempSheets = sheets.slice(0, sheets.length - 1);
+
+     for (let pIdx = 0; pIdx < orphanParts.length; pIdx++) {
+      let part = orphanParts[pIdx];
+      let partPlaced = false;
+
+      for (let s = tempSheets.length - 1; s >= 0; s--) {
+       let sheet = tempSheets[s];
+       for (let f = 0; f < sheet.freeRects.length; f++) {
+        let rect = sheet.freeRects[f];
+        let neededW = part.width + kerf;
+        let neededL = part.length + kerf;
+
+        if (neededW <= rect.w && neededL <= rect.h) {
+         sheet.parts.push({
+          name: part.name,
+          alpha: part.alpha,
+          length: part.length,
+          width: part.width,
+          x: rect.x + (kerf/2),
+          y: rect.y + (kerf/2),
+          rotated: part.rotated
+         });
+         sheet.freeRects.splice(f, 1);
+         partPlaced = true;
+         break;
+        }
+       }
+       if (partPlaced) break;
+      }
+
+      if (!partPlaced) {
+       canAbsorb = false;
+       break;
+      }
+     }
+
+     if (canAbsorb) sheets = tempSheets;
+    }
+   }
+
+   materialSheetCounts[mat] = sheets.length;
+
+   sheets.forEach((sheet, sIdx) => {
+    let totalPartArea = 0;
+    sheet.parts.forEach(p => { totalPartArea += (p.length * p.width); });
+    let sheetArea = stock.length * stock.width;
+    let efficiency = ((totalPartArea / sheetArea) * 100).toFixed(1);
+
+    allSheetReports.push({
+     mat: mat,
+     stock: stock,
+     sheetNum: globalSheetCount++,
+     sheet: sheet,
+     efficiency: efficiency
+    });
+   });
+  }
+
+  // 🌟 PAGE 1: MASTER SUMMARY REPORT
+  let summaryPageDiv = document.createElement('div');
+  summaryPageDiv.className = "pdf-page summary-page";
+  
+  let summaryHtml = `<h2 style="color: #14233C; border-bottom: 2px solid #3498db; padding-bottom: 8px;">Flazzor Interiors - Master Cutting Summary</h2>`;
+  summaryHtml += `<p><b>Date:</b> ${new Date().toLocaleDateString()} | <b>Total Sheets & Edge Banding Breakdown</b></p>`;
+  summaryHtml += `<table class="summary-table"><thead><tr><th>Material Name</th><th>Sheet Size (mm)</th><th>Total Sheets Used</th><th>Total Panels</th><th>Edge Banding (Meters)</th></tr></thead><tbody>`;
+  
+  for (let mat in panelsByMaterial) {
+   let sCount = materialSheetCounts[mat] || 0;
+   let pCount = panelsByMaterial[mat].length;
+   let stock = stockMap[mat] || { length: 2440, width: 1220 };
+   let matEB = ((materialEdgeBandingMM[mat] || 0) / 1000).toFixed(2);
+   
+   summaryHtml += `<tr><td><b>${mat}</b></td><td>${stock.width} x ${stock.length} mm</td><td><b>${sCount} Sheets</b></td><td>${pCount} Panels</td><td><b>${matEB} Meters</b></td></tr>`;
+  }
+
+  let totalEBMeters = (totalEdgeBandingMM / 1000).toFixed(2);
+  summaryHtml += `<tr style="background: #eaf2f8;"><td colspan="4" style="text-align: right;"><b>Total Edge Banding Required (All Materials):</b></td><td><b>${totalEBMeters} Meters</b></td></tr>`;
+  summaryHtml += `</tbody></table>`;
+  
+  // Top & Bottom Banners on Summary Page
+  summaryHtml += `<div class="ad-banner-slot">📢 Advertisement Banner (Summary Top)</div>`;
+  summaryHtml += `<div class="ad-banner-slot">📢 Advertisement Banner (Summary Bottom)</div>`;
+
+  summaryPageDiv.innerHTML = summaryHtml;
+  reportContainer.appendChild(summaryPageDiv);
+
+  // 🌟 SUBSEQUENT PAGES: DUAL BANNER SLOTS PER SHEET PAGE (SCROLL MONETIZATION)
+  allSheetReports.forEach(rep => {
    let pageDiv = document.createElement('div');
    pageDiv.className = "pdf-page";
 
-   let html = `<h3>Flazzor Interiors - Cutting Layout Report</h3>`;
-   html += `<p><b>Material:</b> ${mat} | <b>Sheet Size:</b> ${stock.length} x ${stock.width} mm | <b>Efficiency:</b> ${efficiency}% utilized</p>`;
-   html += `<div class="sheet-box">`;
-   html += `<h4>Sheet # ${globalSheetCount} Layout - Contains ${sheet.parts.length} Panels</h4>`;
+   let sheetAlphaMap = {};
+   rep.sheet.parts.forEach(p => {
+    if (!sheetAlphaMap[p.alpha]) {
+     sheetAlphaMap[p.alpha] = { length: p.length, width: p.width, count: 0 };
+    }
+    sheetAlphaMap[p.alpha].count++;
+   });
+
+   // Top Banner per result page
+   let html = `<div class="ad-banner-slot">📢 Advertisement Banner (Page ${rep.sheetNum} Top)</div>`;
    
+   html += `<h3>Flazzor Interiors - Cutting Layout Report</h3>`;
+   html += `<p><b>Material:</b> ${rep.mat} | <b>Sheet Size (Portrait):</b> ${rep.stock.width} x ${rep.stock.length} mm | <b>Efficiency:</b> ${rep.efficiency}% utilized</p>`;
+   
+   html += `<div class="sheet-wrapper">`;
+   
+   // Sidebar Operator Reference Pane
+   html += `<div class="operator-ref-pane">`;
+   html += `<h5>📋 Sheet Ref</h5>`;
+   for (let tag in sheetAlphaMap) {
+    let info = sheetAlphaMap[tag];
+    html += `<div class="ref-item"><b>${tag}</b>: L:${info.length} W:${info.width} (${info.count})</div>`;
+   }
+   html += `</div>`;
+
+   html += `<div class="sheet-box">`;
+   html += `<h4 style="margin: 0 0 5px 0; color: #14233C;">Sheet # ${rep.sheetNum} Layout</h4>`;
    html += `<div class="visual-sheet">`;
    
-   let scaleX = 700 / stock.length;
-   let scaleY = 350 / stock.width;
+   let scaleX = 360 / rep.stock.width;
+   let scaleY = 720 / rep.stock.length;
 
-   sheet.parts.forEach(p => {
+   rep.sheet.parts.forEach(p => {
     let left = p.x * scaleX;
     let top = p.y * scaleY;
-    let pw = p.length * scaleX;
-    let ph = p.width * scaleY;
+    let pw = p.width * scaleX;
+    let ph = p.length * scaleY;
 
-    html += `<div class="cut-part" style="left: ${left}px; top: ${top}px; width: ${pw}px; height: ${ph}px;" title="${p.name}: ${p.length}x${p.width}mm">`;
-    html += `${p.name}<br>${p.length}x${p.width}`;
+    html += `<div class="cut-part" style="left: ${left}px; top: ${top}px; width: ${pw}px; height: ${ph}px;" title="${p.name} (${p.alpha}): L:${p.length} x W:${p.width}mm">`;
+    html += `<span class="part-dim-top">L: ${p.length}</span>`;
+    html += `<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-grow: 1; padding: 0 2px;">`;
+    html += `<span class="part-dim-side">W:${p.width}</span>`;
+    html += `<span class="alpha-tag">${p.alpha}</span>`;
+    html += `<span class="part-dim-side">W:${p.width}</span>`;
+    html += `</div>`;
+    html += `<span class="part-dim-top">L: ${p.length}</span>`;
     html += `</div>`;
    });
 
    html += `</div>`;
-   html += `<p style="color: green; font-weight: bold; margin-top: 5px;">✔ Zero-Waste Smart Nesting Applied.</p>`;
+   html += `</div>`;
    html += `</div>`;
 
+   // Bottom Banner per result page
+   html += `<div class="ad-banner-slot" style="margin-top: 15px;">📢 Advertisement Banner (Page ${rep.sheetNum} Bottom)</div>`;
+
    pageDiv.innerHTML = html;
-   container.appendChild(pageDiv);
-   globalSheetCount++;
+   reportContainer.appendChild(pageDiv);
   });
+
+  document.getElementById("resultSection").style.display = "block";
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+ } catch(e) {
+  alert("❌ Optimization Error: " + e.message);
+  console.error(e);
  }
-
- // Render Master Summary Table at top of reports
- let summaryHtml = `<h3>Master Summary Table</h3>`;
- summaryHtml += `<table class="summary-table"><thead><tr><th>Sheet No.</th><th>Material Name</th><th>Sheet Size (mm)</th><th>Total Panels</th><th>Sheet Efficiency</th></tr></thead><tbody>`;
- masterSummaryData.forEach(m => {
-  summaryHtml += `<tr><td>Sheet #${m.sheetNo}</td><td>${m.material}</td><td>${m.size}</td><td>${m.panelsCount} Panels</td><td><b>${m.efficiency}%</b></td></tr>`;
- });
- summaryHtml += `</tbody></table>`;
- document.getElementById("masterSummaryBox").innerHTML = summaryHtml;
-
- document.getElementById("resultSection").style.display = "block";
- window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 window.onload = function() {
- loadStockTable();
  addPanelRow();
 };
 </script>
