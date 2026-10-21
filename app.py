@@ -19,27 +19,41 @@ def load_data():
     lam_path = os.path.join(base_dir, 'laminates_index.pkl')
     edge_path = os.path.join(base_dir, 'edge_swatches_index.pkl')
     
+    # 1. Load Laminates
     try:
         if os.path.exists(lam_path):
             with open(lam_path, 'rb') as f:
                 data = pickle.load(f)
                 if isinstance(data, dict):
-                    loaded_all_laminates = data.get('all_laminates', [])
+                    loaded_all_laminates = data.get('all_laminates', []) or data.get('items', []) or data.get('laminates', [])
                 elif isinstance(data, list):
                     loaded_all_laminates = data
     except Exception as e:
         print(f"Error loading laminates: {e}")
 
+    # 2. Load Edge Swatches (Sabhi keys aur formats ko handle karne ke liye)
     try:
         if os.path.exists(edge_path):
             with open(edge_path, 'rb') as f:
                 data = pickle.load(f)
                 if isinstance(data, dict):
-                    loaded_edge_swatches = data.get('all_edge_swatches', []) or data.get('edge_swatches', [])
+                    loaded_edge_swatches = (
+                        data.get('all_edge_swatches', []) or 
+                        data.get('edge_swatches', []) or 
+                        data.get('items', []) or 
+                        data.get('swatches', [])
+                    )
+                    # Agar dictionary ke andar koi aur nested list hai toh use bhi extract karein
+                    if not loaded_edge_swatches and len(data) > 0:
+                        for k, v in data.items():
+                            if isinstance(v, list):
+                                loaded_edge_swatches.extend(v)
                 elif isinstance(data, list):
                     loaded_edge_swatches = data
     except Exception as e:
         print(f"Error loading edge swatches: {e}")
+    
+    print(f"DEBUG: Loaded {len(loaded_all_laminates)} laminates and {len(loaded_edge_swatches)} edge swatches.")
 
 load_data()
 
@@ -58,13 +72,24 @@ def cutlist_optimizer():
 @app.route('/get_brands', methods=['GET'])
 def get_brands():
     try:
-        lam_brands = {str(item.get('brand')).strip() for item in loaded_all_laminates if item.get('brand')}
-        edge_brands = {str(item.get('brand')).strip() for item in loaded_edge_swatches if item.get('brand')}
+        lam_brands = {str(item.get('brand')).strip() for item in loaded_all_laminates if item and item.get('brand')}
+        
+        # Edge brands ke liye strict check taaki saare 22 brands capture ho jayein
+        edge_brands = set()
+        for item in loaded_edge_swatches:
+            if item and isinstance(item, dict):
+                b = item.get('brand')
+                if b:
+                    edge_brands.add(str(b).strip())
+                    
+        print(f"DEBUG: Found Edge Brands Count -> {len(edge_brands)}")
+        
         return jsonify({
             'laminate_brands': sorted(list(lam_brands)),
             'edge_brands': sorted(list(edge_brands))
         }), 200
     except Exception as e:
+        print(f"Error in get_brands: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/get_laminate_list', methods=['GET'])
