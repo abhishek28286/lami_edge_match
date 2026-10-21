@@ -12,11 +12,10 @@ dependencies:
     sdk: flutter
   http: ^1.2.0
   image_picker: ^1.1.2
-  cupertino_icons: ^1.0.8
-  path_provider: ^2.1.2         # लोकल फोल्डर के लिए
-  permission_handler: ^11.3.0  # परमिशन के लिए
-  webview_flutter: ^4.4.2      # 👈 कटलिस्ट ऑप्टिमाइज़र को इन-ऐप खोलने के लिए जरूरी है
-
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.0
+  webview_flutter: ^4.4.2
+  shared_preferences: ^2.2.2  # 👈 इसे जोड़ लें
 dev_dependencies:
   flutter_test:
     sdk: flutter
