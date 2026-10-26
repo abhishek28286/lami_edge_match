@@ -239,7 +239,7 @@
 </div>
 
 <script>
-// 👉 100% काम करने वाला प्रिंट/पीडीएफ फंक्शन जो नए टैब/क्रोम में क्लीन रिपोर्ट खोलेगा
+// 👉 100% काम करने वाला प्रिंट/पीडीएफ फंक्शन जो नए टैब में रिपोर्ट खोलेगा और साथ में प्रिंट बटन भी देगा
 function triggerAppPDFPrint() {
     let resultSection = document.getElementById('resultSection');
     if (!resultSection || resultSection.style.display === 'none') {
@@ -255,6 +255,9 @@ function triggerAppPDFPrint() {
         <title>Flazzor Interiors - CutList Optimizer Report</title>
         <style>
             body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #333; }
+            .print-top-bar { text-align: right; background: #14233C; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
+            .print-btn { background: #e74c3c; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+            .print-btn:hover { background: #c0392b; }
             .pdf-page { page-break-after: always; break-after: page; text-align: center; min-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
             .summary-page { text-align: left; display: block; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
@@ -271,17 +274,16 @@ function triggerAppPDFPrint() {
             .part-dim-top { font-size: 9px; color: #f1c40f; font-weight: bold; }
             .part-dim-side { font-size: 9px; color: #f1c40f; font-weight: bold; writing-mode: vertical-rl; transform: rotate(180deg); }
             .no-print { display: none !important; }
+            @media print {
+                .print-top-bar { display: none !important; }
+            }
         </style>
     </head>
     <body>
+        <div class="print-top-bar">
+            <button class="print-btn" onclick="window.print()">🖨️ Tap Here to Save as PDF / Print</button>
+        </div>
         ${resultSection.innerHTML}
-        <script>
-            window.onload = function() {
-                setTimeout(function() {
-                    window.print();
-                }, 500);
-            };
-        <\/script>
     </body>
     </html>`;
 
