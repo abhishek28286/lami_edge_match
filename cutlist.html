@@ -232,50 +232,67 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="shareNativeReport()">📤 Share Cutting Report</button>
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="triggerAppPDFPrint()">🖨️ Export Clean PDF / Print</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 मोबाइल WebView के अनुकूल नेटिव शेयर फंक्शन (बिना किसी क्रैश के सीधे WhatsApp/Share Menu खुलेगा)
-function shareNativeReport() {
-    let summaryTable = document.querySelector(".summary-table");
-    if (!summaryTable || document.getElementById('resultSection').style.display === 'none') {
+// 👉 100% काम करने वाला प्रिंट/पीडीएफ फंक्शन जो नए टैब/क्रोम में क्लीन रिपोर्ट खोलेगा
+function triggerAppPDFPrint() {
+    let resultSection = document.getElementById('resultSection');
+    if (!resultSection || resultSection.style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
 
-    let reportText = "🪚 Flazzor WoodMat - CutList Optimizer Report\n\n";
-    reportText += "Cutting Summary & Materials:\n";
-    
-    let rows = summaryTable.querySelectorAll("tr");
-    rows.forEach((row) => {
-        let cols = row.querySelectorAll("th, td");
-        let rowData = [];
-        cols.forEach(col => rowData.push(col.innerText.trim()));
-        if(rowData.length > 0) {
-            reportText += "• " + rowData.join(" | ") + "\n";
-        }
-    });
+    let reportHtml = `
+    <!DOCTYPE html>
+    <html lang="hi">
+    <head>
+        <meta charset="UTF-8">
+        <title>Flazzor Interiors - CutList Optimizer Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #333; }
+            .pdf-page { page-break-after: always; break-after: page; text-align: center; min-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
+            .summary-page { text-align: left; display: block; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px; }
+            th { background: #14233C; color: white; }
+            .sheet-wrapper { display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 20px; margin: 10px auto; }
+            .operator-ref-pane { background: #fff; border: 2px solid #14233C; padding: 10px; border-radius: 6px; text-align: left; font-size: 11px; width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+            .operator-ref-pane h5 { margin: 0 0 6px 0; font-size: 12px; color: #14233C; border-bottom: 1.5px solid #3498db; padding-bottom: 3px; text-align: center; }
+            .ref-item { margin-bottom: 4px; font-family: monospace; font-weight: bold; color: #2c3e50; }
+            .sheet-box { border: 2px solid #14233C; padding: 10px; background: #fafafa; border-radius: 6px; }
+            .visual-sheet { width: 360px; height: 720px; border: 3px solid #14233C; background: #fff; position: relative; overflow: hidden; box-sizing: border-box; }
+            .cut-part { position: absolute; border: 1.5px solid #1a252f; background: #2980b9; color: white; font-size: 14px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; box-sizing: border-box; padding: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+            .alpha-tag { font-size: 15px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 3px; }
+            .part-dim-top { font-size: 9px; color: #f1c40f; font-weight: bold; }
+            .part-dim-side { font-size: 9px; color: #f1c40f; font-weight: bold; writing-mode: vertical-rl; transform: rotate(180deg); }
+            .no-print { display: none !important; }
+        </style>
+    </head>
+    <body>
+        ${resultSection.innerHTML}
+        <script>
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            };
+        <\/script>
+    </body>
+    </html>`;
 
-    reportText += "\n📍 Flazzor Interiors, Udaipur (Rajasthan)";
-
-    // अगर मोबाइल ब्राउज़र/WebView शेयर एपीआई सपोर्ट करता है तो सीधे नेटिव शेयर खोलें
-    if (navigator.share) {
-        navigator.share({
-            title: 'WoodMat CutList Report',
-            text: reportText,
-        }).catch((error) => console.log('Sharing failed', error));
-    } else {
-        // अगर शेयर एपीआई न हो तो क्लिपबोर्ड में कॉपी करके बता दें
-        navigator.clipboard.writeText(reportText).then(() => {
-            alert("✅ Report copied to clipboard! You can now paste it on WhatsApp.");
-        }).catch(() => {
-            alert("❌ Could not share report.");
-        });
-    }
+    let blob = new Blob([reportHtml], { type: 'text/html' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function getStockList() {
