@@ -241,15 +241,13 @@
 </div>
 
 <script>
-// 👉 WebView के अंदर 100% काम करने वाला असली PDF जेनरेटर फंक्शन
+// 👉 WebView के अंदर 100% काम करने वाला PDF प्रीव्यू और सेव फंक्शन
 function triggerAppPDFPrint() {
     let element = document.getElementById('resultSection');
     if (!element || element.style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
-
-    alert("⏳ Generating PDF Report, Please wait...");
 
     let opt = {
         margin:       5,
@@ -259,11 +257,8 @@ function triggerAppPDFPrint() {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().from(element).set(opt).save().then(() => {
-        alert("✅ PDF Generated & Downloaded Successfully!");
-    }).catch(err => {
-        alert("❌ PDF Error: " + err.message);
-    });
+    // सीधे PDF प्रीव्यू विंडो खोल देगा, जहाँ से आप आसानी से सेव या शेयर कर सकेंगे
+    html2pdf().from(element).set(opt).outputPdf('dataurlnewwindow');
 }
 
 function getStockList() {
