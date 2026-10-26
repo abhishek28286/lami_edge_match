@@ -232,15 +232,16 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="openReportInNewTab()">🖨️ Tap Here to Save as PDF / Print</button>
+   <!-- 👉 यहाँ लाल बटन को डायरेक्ट विंडो ओपनर और प्रिंट ट्रिगर बना दिया है -->
+   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="openReportWindow()">🖨️ Tap Here to Save as PDF / Print</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह तरीका 100% काम करेगा क्योंकि यह अलर्ट कन्फर्मेशन के बाद प्रिंट ट्रिगर करेगा
-function openReportInNewTab() {
+// 👉 यह फंक्शन सेकंड स्क्रीन (नई विंडो) खोलेगा और उसमें प्रिंट का बटन 100% काम करेगा
+function openReportWindow() {
     let resultSection = document.getElementById('resultSection');
     if (!resultSection || resultSection.style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
@@ -256,7 +257,7 @@ function openReportInNewTab() {
         <style>
             body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #333; }
             .print-top-bar { text-align: center; background: #14233C; padding: 20px; border-radius: 6px; margin-bottom: 25px; }
-            .print-btn { background: #e74c3c; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+            .print-btn { background: #e74c3c; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-decoration: none; display: inline-block; }
             .pdf-page { page-break-after: always; break-after: page; text-align: center; min-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
             .summary-page { text-align: left; display: block; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
@@ -279,20 +280,16 @@ function openReportInNewTab() {
     </head>
     <body>
         <div class="print-top-bar">
-            <button class="print-btn" onclick="if(confirm('Click OK to Save/Print PDF Report')) { window.print(); }">🖨️ Tap Here to Save as PDF / Print</button>
+            <!-- यहाँ हमने जावास्क्रिप्ट फंक्शन के साथ सीधा प्रिंट कमांड जोड़ दिया है -->
+            <a href="javascript:window.print();" class="print-btn">🖨️ Tap Here to Save as PDF / Print</a>
         </div>
         ${resultSection.innerHTML}
     </body>
     </html>`;
 
-    let blob = new Blob([reportHtml], { type: 'text/html' });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    let win = window.open('', '_blank');
+    win.document.write(reportHtml);
+    win.document.close();
 }
 
 function getStockList() {
