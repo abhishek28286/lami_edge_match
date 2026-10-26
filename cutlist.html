@@ -3,8 +3,6 @@
 <head>
  <meta charset="UTF-8">
  <title>Flazzor Interiors - CutList Optimizer Pro</title>
- <!-- 🌟 html2pdf Library for WebView PDF Generation -->
- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -241,7 +239,7 @@
 </div>
 
 <script>
-// 👉 WebView के अंदर 100% काम करने वाला PDF प्रीव्यू और सेव फंक्शन
+// 👉 100% फुल-प्रूफ प्रिंट फंक्शन जो बिना किसी लाइब्रेरी के सीधे प्रिंट/सेव डायलॉग खोलेगा
 function triggerAppPDFPrint() {
     let element = document.getElementById('resultSection');
     if (!element || element.style.display === 'none') {
@@ -249,16 +247,12 @@ function triggerAppPDFPrint() {
         return;
     }
 
-    let opt = {
-        margin:       5,
-        filename:     'Flazzor_CutList_Report.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // सीधे PDF प्रीव्यू विंडो खोल देगा, जहाँ से आप आसानी से सेव या शेयर कर सकेंगे
-    html2pdf().from(element).set(opt).outputPdf('dataurlnewwindow');
+    try {
+        window.focus();
+        window.print();
+    } catch (e) {
+        alert("Print Error: " + e.message);
+    }
 }
 
 function getStockList() {
