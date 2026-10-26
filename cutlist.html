@@ -3,6 +3,8 @@
 <head>
  <meta charset="UTF-8">
  <title>Flazzor Interiors - CutList Optimizer Pro</title>
+ <!-- 🌟 html2pdf Library for WebView PDF Generation -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -239,25 +241,29 @@
 </div>
 
 <script>
-// 👉 100% काम करने वाला पीडीएफ प्रिंट फंक्शन (WebView Friendly)
+// 👉 WebView के अंदर 100% काम करने वाला असली PDF जेनरेटर फंक्शन
 function triggerAppPDFPrint() {
-    try {
-        window.focus();
-        window.print();
-    } catch (e) {
-        let printWindow = window.open('', '', 'height=700,width=900');
-        printWindow.document.write('<html><head><title>Flazzor WoodMat Report</title>');
-        printWindow.document.write('<style>body { font-family: Arial; padding: 20px; }</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(document.getElementById('resultSection').innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+    let element = document.getElementById('resultSection');
+    if (!element || element.style.display === 'none') {
+        alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
+        return;
     }
+
+    alert("⏳ Generating PDF Report, Please wait...");
+
+    let opt = {
+        margin:       5,
+        filename:     'Flazzor_CutList_Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(opt).save().then(() => {
+        alert("✅ PDF Generated & Downloaded Successfully!");
+    }).catch(err => {
+        alert("❌ PDF Error: " + err.message);
+    });
 }
 
 function getStockList() {
