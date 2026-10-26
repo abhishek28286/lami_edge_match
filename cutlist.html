@@ -232,27 +232,40 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="triggerAppPDFPrint()">🖨️ Export Clean PDF / Print</button>
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="shareCutListReportWhatsApp()">📤 Share Complete Report on WhatsApp</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 100% फुल-प्रूफ प्रिंट फंक्शन जो बिना किसी लाइब्रेरी के सीधे प्रिंट/सेव डायलॉग खोलेगा
-function triggerAppPDFPrint() {
-    let element = document.getElementById('resultSection');
-    if (!element || element.style.display === 'none') {
+// 👉 100% काम करने वाला WhatsApp शेयर फंक्शन (WebView Friendly)
+function shareCutListReportWhatsApp() {
+    let summaryTable = document.querySelector(".summary-table");
+    if (!summaryTable || document.getElementById('resultSection').style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
 
-    try {
-        window.focus();
-        window.print();
-    } catch (e) {
-        alert("Print Error: " + e.message);
-    }
+    let reportText = "🪚 *Flazzor WoodMat - CutList Optimizer Report*\n\n";
+    reportText += "✅ *Cutting Summary & Materials:*\n";
+    
+    let rows = summaryTable.querySelectorAll("tr");
+    rows.forEach((row) => {
+        let cols = row.querySelectorAll("th, td");
+        let rowData = [];
+        cols.forEach(col => rowData.push(col.innerText.trim()));
+        if(rowData.length > 0) {
+            reportText += "• " + rowData.join(" | ") + "\n";
+        }
+    });
+
+    reportText += "\n📍 *Flazzor Interiors, Udaipur (Rajasthan)*";
+
+    let encodedText = encodeURIComponent(reportText);
+    let whatsappUrl = `https://wa.me/?text=${encodedText}`;
+    
+    window.location.href = whatsappUrl;
 }
 
 function getStockList() {
