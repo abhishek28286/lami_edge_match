@@ -232,23 +232,23 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="shareCutListReportWhatsApp()">📤 Share Complete Report on WhatsApp</button>
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="shareNativeReport()">📤 Share Cutting Report</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 100% काम करने वाला WhatsApp शेयर फंक्शन (WebView Friendly)
-function shareCutListReportWhatsApp() {
+// 👉 मोबाइल WebView के अनुकूल नेटिव शेयर फंक्शन (बिना किसी क्रैश के सीधे WhatsApp/Share Menu खुलेगा)
+function shareNativeReport() {
     let summaryTable = document.querySelector(".summary-table");
     if (!summaryTable || document.getElementById('resultSection').style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
 
-    let reportText = "🪚 *Flazzor WoodMat - CutList Optimizer Report*\n\n";
-    reportText += "✅ *Cutting Summary & Materials:*\n";
+    let reportText = "🪚 Flazzor WoodMat - CutList Optimizer Report\n\n";
+    reportText += "Cutting Summary & Materials:\n";
     
     let rows = summaryTable.querySelectorAll("tr");
     rows.forEach((row) => {
@@ -260,12 +260,22 @@ function shareCutListReportWhatsApp() {
         }
     });
 
-    reportText += "\n📍 *Flazzor Interiors, Udaipur (Rajasthan)*";
+    reportText += "\n📍 Flazzor Interiors, Udaipur (Rajasthan)";
 
-    let encodedText = encodeURIComponent(reportText);
-    let whatsappUrl = `https://wa.me/?text=${encodedText}`;
-    
-    window.location.href = whatsappUrl;
+    // अगर मोबाइल ब्राउज़र/WebView शेयर एपीआई सपोर्ट करता है तो सीधे नेटिव शेयर खोलें
+    if (navigator.share) {
+        navigator.share({
+            title: 'WoodMat CutList Report',
+            text: reportText,
+        }).catch((error) => console.log('Sharing failed', error));
+    } else {
+        // अगर शेयर एपीआई न हो तो क्लिपबोर्ड में कॉपी करके बता दें
+        navigator.clipboard.writeText(reportText).then(() => {
+            alert("✅ Report copied to clipboard! You can now paste it on WhatsApp.");
+        }).catch(() => {
+            alert("❌ Could not share report.");
+        });
+    }
 }
 
 function getStockList() {
