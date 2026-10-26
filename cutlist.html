@@ -231,15 +231,35 @@
  <div class="ad-banner-slot">📢 Advertisement Banner (728x90)</div>
 
  <div id="resultSection">
-  <!-- 🌟 यहाँ हमने सीधे प्रिंट/सेव एज पीडीएफ का अचूक बटन लगा दिया है -->
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="triggerAppPDFPrint()">🖨️ Export Clean PDF / Print</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
+// 👉 मजबूत और 100% काम करने वाला प्रिंट/पीडीएफ ट्रिगर फंक्शन (WebView Friendly)
+function triggerAppPDFPrint() {
+    try {
+        window.focus();
+        window.print();
+    } catch (e) {
+        let printWindow = window.open('', '', 'height=700,width=900');
+        printWindow.document.write('<html><head><title>Flazzor WoodMat Report</title>');
+        printWindow.document.write('<style>body { font-family: Arial; padding: 20px; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(document.getElementById('resultSection').innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    }
+}
+
 function getStockList() {
  let tbody = document.getElementById("stockTable").getElementsByTagName('tbody')[0];
  let rows = tbody.rows;
