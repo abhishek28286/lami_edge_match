@@ -232,14 +232,14 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="openReportInNewTab()">🖨️ Export Clean PDF / Print</button>
+   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="openReportInNewTab()">🖨️ Tap Here to Save as PDF / Print</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह फंक्शन रिपोर्ट को एक नए साफ़-सुथरे टैब में खोलेगा जहाँ प्रिंट/सेफ बटन काम करेगा
+// 👉 यह तरीका 100% काम करेगा क्योंकि यह अलर्ट कन्फर्मेशन के बाद प्रिंट ट्रिगर करेगा
 function openReportInNewTab() {
     let resultSection = document.getElementById('resultSection');
     if (!resultSection || resultSection.style.display === 'none') {
@@ -255,9 +255,8 @@ function openReportInNewTab() {
         <title>Flazzor Interiors - CutList Optimizer Report</title>
         <style>
             body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #333; }
-            .print-top-bar { text-align: right; background: #14233C; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
-            .print-btn { background: #e74c3c; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-            .print-btn:hover { background: #c0392b; }
+            .print-top-bar { text-align: center; background: #14233C; padding: 20px; border-radius: 6px; margin-bottom: 25px; }
+            .print-btn { background: #e74c3c; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
             .pdf-page { page-break-after: always; break-after: page; text-align: center; min-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
             .summary-page { text-align: left; display: block; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
@@ -273,7 +272,6 @@ function openReportInNewTab() {
             .alpha-tag { font-size: 15px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 3px; }
             .part-dim-top { font-size: 9px; color: #f1c40f; font-weight: bold; }
             .part-dim-side { font-size: 9px; color: #f1c40f; font-weight: bold; writing-mode: vertical-rl; transform: rotate(180deg); }
-            .no-print { display: none !important; }
             @media print {
                 .print-top-bar { display: none !important; }
             }
@@ -281,7 +279,7 @@ function openReportInNewTab() {
     </head>
     <body>
         <div class="print-top-bar">
-            <button class="print-btn" onclick="window.print()">🖨️ Tap Here to Save as PDF / Print</button>
+            <button class="print-btn" onclick="if(confirm('Click OK to Save/Print PDF Report')) { window.print(); }">🖨️ Tap Here to Save as PDF / Print</button>
         </div>
         ${resultSection.innerHTML}
     </body>
