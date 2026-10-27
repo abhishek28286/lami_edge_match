@@ -142,8 +142,8 @@
   }
 
   @media print {
-   body * { visibility: hidden; }
-   #resultSection, #resultSection * { visibility: visible; }
+   body * { visibility: hidden !important; }
+   #resultSection, #resultSection * { visibility: visible !important; }
    #resultSection { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; display: block !important; }
    .no-print, .ad-banner-slot { display: none !important; }
    .pdf-page { page-break-after: always; break-after: page; height: 100vh; border-bottom: none; }
@@ -232,51 +232,37 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <!-- 👉 यह बटन क्लिक होते ही सीधे फोन की शेयर शीट (WhatsApp, PDF Save, Drive) खोल देगा -->
-   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="shareCutListReport()">📤 Save PDF / Share Report</button>
+   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="printDirectReport()">🖨️ Export Clean PDF / Print</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह फंक्शन WebView के अंदर 100% काम करेगा और फोन की नेटिव शेयर विंडो खोलेगा
-function shareCutListReport() {
-    let summaryTable = document.querySelector(".summary-table");
-    if (!summaryTable || document.getElementById('resultSection').style.display === 'none') {
+// 👉 यह फंक्शन सीधे WebView के अंदर बिना किसी नए टैब के रिपोर्ट को क्लीन प्रिंट व्यू में बदल देगा
+function printDirectReport() {
+    let resultSec = document.getElementById('resultSection');
+    if (!resultSec || resultSec.style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
-
-    let reportText = "🪚 *Flazzor WoodMat - CutList Optimizer Report*\n\n";
-    reportText += "✅ *Cutting Summary & Materials:*\n";
     
-    let rows = summaryTable.querySelectorAll("tr");
-    rows.forEach((row) => {
-        let cols = row.querySelectorAll("th, td");
-        let rowData = [];
-        cols.forEach(col => rowData.push(col.innerText.trim()));
-        if(rowData.length > 0) {
-            reportText += "• " + rowData.join(" | ") + "\n";
-        }
-    });
-
-    reportText += "\n📍 *Flazzor Interiors, Udaipur (Rajasthan)*";
-
-    // मोबाइल की नेटिव शेयर शीट ट्रिगर करें (WhatsApp, Gmail, Save to Files, Print आदि सब मिल जाएगा)
-    if (navigator.share) {
-        navigator.share({
-            title: 'Flazzor WoodMat Report',
-            text: reportText,
-        }).catch((error) => console.log('Share cancelled', error));
-    } else {
-        // फॉलबैक: क्लिपबोर्ड में कॉपी करें
-        navigator.clipboard.writeText(reportText).then(() => {
-            alert("✅ Report copied to clipboard! You can paste it anywhere.");
-        }).catch(() => {
-            alert("❌ Share failed.");
-        });
-    }
+    let reportContent = resultSec.innerHTML;
+    
+    // पूरे पेज को सिर्फ रिपोर्ट और दो साफ बटनों से बदल देंगे
+    document.body.innerHTML = `
+        <div style="padding: 15px; text-align: center; background: #14233C; position: sticky; top: 0; z-index: 9999;" class="no-print">
+            <button onclick="location.reload()" style="background: #27ae60; color: white; padding: 10px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">⬅️ Back to Form</button>
+            <button onclick="window.print()" style="background: #e74c3c; color: white; padding: 10px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">🖨️ Print / Save PDF</button>
+        </div>
+        <div style="padding: 20px; background: #fff;">
+            ${reportContent}
+        </div>
+    `;
+    
+    setTimeout(() => {
+        window.print();
+    }, 400);
 }
 
 function getStockList() {
