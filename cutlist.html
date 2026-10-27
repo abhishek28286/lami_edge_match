@@ -3,6 +3,8 @@
 <head>
  <meta charset="UTF-8">
  <title>Flazzor Interiors - CutList Optimizer Pro</title>
+ <!-- 🌟 html2pdf Library for direct PDF download of the report screen -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -142,8 +144,8 @@
   }
 
   @media print {
-   body * { visibility: hidden !important; }
-   #resultSection, #resultSection * { visibility: visible !important; }
+   body * { visibility: hidden; }
+   #resultSection, #resultSection * { visibility: visible; }
    #resultSection { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; display: block !important; }
    .no-print, .ad-banner-slot { display: none !important; }
    .pdf-page { page-break-after: always; break-after: page; height: 100vh; border-bottom: none; }
@@ -232,37 +234,37 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <button type="button" class="action-btn" style="background: #8e44ad;" onclick="printDirectReport()">🖨️ Export Clean PDF / Print</button>
+   <!-- 👉 यह बटन दबाते ही सेकंड स्क्रीन की पूरी रिपोर्ट सीधे PDF बनकर डाउनलोड हो जाएगी -->
+   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="downloadResultAsPDF()">📥 Download Full Report as PDF</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह फंक्शन सीधे WebView के अंदर बिना किसी नए टैब के रिपोर्ट को क्लीन प्रिंट व्यू में बदल देगा
-function printDirectReport() {
-    let resultSec = document.getElementById('resultSection');
-    if (!resultSec || resultSec.style.display === 'none') {
+// 👉 यह फंक्शन सेकंड स्क्रीन के पूरे रिजल्ट एरिया को सीधे PDF में बदल देगा
+function downloadResultAsPDF() {
+    let element = document.getElementById('pdfReportContainer');
+    if (!element || document.getElementById('resultSection').style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
-    
-    let reportContent = resultSec.innerHTML;
-    
-    // पूरे पेज को सिर्फ रिपोर्ट और दो साफ बटनों से बदल देंगे
-    document.body.innerHTML = `
-        <div style="padding: 15px; text-align: center; background: #14233C; position: sticky; top: 0; z-index: 9999;" class="no-print">
-            <button onclick="location.reload()" style="background: #27ae60; color: white; padding: 10px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">⬅️ Back to Form</button>
-            <button onclick="window.print()" style="background: #e74c3c; color: white; padding: 10px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">🖨️ Print / Save PDF</button>
-        </div>
-        <div style="padding: 20px; background: #fff;">
-            ${reportContent}
-        </div>
-    `;
-    
-    setTimeout(() => {
-        window.print();
-    }, 400);
+
+    alert("⏳ Generating PDF, Please wait a moment...");
+
+    let opt = {
+        margin:       5,
+        filename:     'Flazzor_CutList_Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(opt).save().then(() => {
+        alert("✅ PDF Downloaded Successfully!");
+    }).catch(err => {
+        alert("❌ PDF Generation Error: " + err.message);
+    });
 }
 
 function getStockList() {
