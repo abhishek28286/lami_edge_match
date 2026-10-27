@@ -3,8 +3,6 @@
 <head>
  <meta charset="UTF-8">
  <title>Flazzor Interiors - CutList Optimizer Pro</title>
- <!-- html2pdf Library for direct PDF generation -->
- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -233,38 +231,68 @@
  <div class="ad-banner-slot">📢 Advertisement Banner (728x90)</div>
 
  <div id="resultSection">
-  <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <!-- 👉 यह बटन बिना किसी सेकंड स्क्रीन के सीधे इसी पेज पर पीडीएफ डाउनलोड कर देगा -->
-   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="downloadDirectPDF()">📥 Download Full Report as PDF</button>
+  <!-- 👉 सेकंड स्क्रीन के ऊपर लगा हुआ सीधा और पक्का सेव/प्रिंट बटन -->
+  <div style="text-align: right; margin-bottom: 15px; background: #14233C; padding: 12px; border-radius: 6px;" class="no-print">
+   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px; margin: 0;" onclick="saveReportAsHTMLOrPrint()">💾 Save Report / Print PDF</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह फंक्शन बिना किसी नए टैब के सीधे रिपोर्ट को पीडीएफ बनाकर डाउनलोड कर देगा
-function downloadDirectPDF() {
-    let element = document.getElementById('pdfReportContainer');
-    if (!element || document.getElementById('resultSection').style.display === 'none') {
+// 👉 यह फंक्शन सेकंड स्क्रीन की पूरी रिपोर्ट को एक क्लिक में डाउनलोड फाइल (HTML/PDF) बना देगा
+function saveReportAsHTMLOrPrint() {
+    let resultSec = document.getElementById('resultSection');
+    if (!resultSec || resultSec.style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
 
-    alert("⏳ Generating PDF Report, Please wait...");
+    let reportHtml = `
+    <!DOCTYPE html>
+    <html lang="hi">
+    <head>
+        <meta charset="UTF-8">
+        <title>Flazzor Interiors - CutList Optimizer Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #333; }
+            .print-top-bar { text-align: center; background: #14233C; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
+            .print-btn { background: #e74c3c; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+            .pdf-page { page-break-after: always; break-after: page; text-align: center; min-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
+            .summary-page { text-align: left; display: block; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px; }
+            th { background: #14233C; color: white; }
+            .sheet-wrapper { display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 20px; margin: 10px auto; }
+            .operator-ref-pane { background: #fff; border: 2px solid #14233C; padding: 10px; border-radius: 6px; text-align: left; font-size: 11px; width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+            .operator-ref-pane h5 { margin: 0 0 6px 0; font-size: 12px; color: #14233C; border-bottom: 1.5px solid #3498db; padding-bottom: 3px; text-align: center; }
+            .ref-item { margin-bottom: 4px; font-family: monospace; font-weight: bold; color: #2c3e50; }
+            .sheet-box { border: 2px solid #14233C; padding: 10px; background: #fafafa; border-radius: 6px; }
+            .visual-sheet { width: 360px; height: 720px; border: 3px solid #14233C; background: #fff; position: relative; overflow: hidden; box-sizing: border-box; }
+            .cut-part { position: absolute; border: 1.5px solid #1a252f; background: #2980b9; color: white; font-size: 14px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; box-sizing: border-box; padding: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+            .alpha-tag { font-size: 15px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 3px; }
+            .part-dim-top { font-size: 9px; color: #f1c40f; font-weight: bold; }
+            .part-dim-side { font-size: 9px; color: #f1c40f; font-weight: bold; writing-mode: vertical-rl; transform: rotate(180deg); }
+            @media print { .print-top-bar { display: none !important; } }
+        </style>
+    </head>
+    <body>
+        <div class="print-top-bar">
+            <button class="print-btn" onclick="window.print()">🖨️ Tap Here to Save as PDF / Print</button>
+        </div>
+        ${resultSec.innerHTML}
+    </body>
+    </html>`;
 
-    let opt = {
-        margin:       5,
-        filename:     'Flazzor_CutList_Report.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().from(element).set(opt).save().then(() => {
-        alert("✅ PDF Downloaded Successfully!");
-    }).catch(err => {
-        alert("❌ PDF Error: " + err.message);
-    });
+    let blob = new Blob([reportHtml], { type: 'text/html;charset=utf-8;' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement('a');
+    link.href = url;
+    link.download = 'Flazzor_CutList_Report.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert("✅ Report File Saved Successfully! You can open and print it anytime.");
 }
 
 function getStockList() {
