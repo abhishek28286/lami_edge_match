@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <title>Flazzor Interiors - CutList Optimizer Pro</title>
- <!-- 🌟 html2pdf Library for direct PDF download of the report screen -->
+ <!-- html2pdf Library for direct PDF generation -->
  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
  <style>
   body { font-family: Arial, sans-serif; background: #f4f6f7; margin: 0; padding: 20px; color: #333; }
@@ -234,23 +234,23 @@
 
  <div id="resultSection">
   <div style="text-align: right; margin-bottom: 15px;" class="no-print">
-   <!-- 👉 यह बटन दबाते ही सेकंड स्क्रीन की पूरी रिपोर्ट सीधे PDF बनकर डाउनलोड हो जाएगी -->
-   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="downloadResultAsPDF()">📥 Download Full Report as PDF</button>
+   <!-- 👉 यह बटन बिना किसी सेकंड स्क्रीन के सीधे इसी पेज पर पीडीएफ डाउनलोड कर देगा -->
+   <button type="button" class="action-btn" style="background: #e74c3c; font-size: 16px; padding: 12px 25px;" onclick="downloadDirectPDF()">📥 Download Full Report as PDF</button>
   </div>
   <div id="pdfReportContainer"></div>
  </div>
 </div>
 
 <script>
-// 👉 यह फंक्शन सेकंड स्क्रीन के पूरे रिजल्ट एरिया को सीधे PDF में बदल देगा
-function downloadResultAsPDF() {
+// 👉 यह फंक्शन बिना किसी नए टैब के सीधे रिपोर्ट को पीडीएफ बनाकर डाउनलोड कर देगा
+function downloadDirectPDF() {
     let element = document.getElementById('pdfReportContainer');
     if (!element || document.getElementById('resultSection').style.display === 'none') {
         alert("Pehle 'RUN OPTIMIZATION' dabakar report generate karein!");
         return;
     }
 
-    alert("⏳ Generating PDF, Please wait a moment...");
+    alert("⏳ Generating PDF Report, Please wait...");
 
     let opt = {
         margin:       5,
@@ -263,7 +263,7 @@ function downloadResultAsPDF() {
     html2pdf().from(element).set(opt).save().then(() => {
         alert("✅ PDF Downloaded Successfully!");
     }).catch(err => {
-        alert("❌ PDF Generation Error: " + err.message);
+        alert("❌ PDF Error: " + err.message);
     });
 }
 
