@@ -869,7 +869,8 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
         request.fields['brands'] = activeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        request.fields['category'] = _selectedCategory;
+        // 👉 सुनिश्चित किया गया है कि सही category ('solid' या 'texture') बैकएंड को जाए
+        request.fields['category'] = _selectedCategory.trim().toLowerCase();
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
         var res = await http.Response.fromStream(await request.send());
@@ -1105,55 +1106,64 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
+              // 👉 सुधरा हुआ InteractiveViewer ताकि मोबाइल पर ज़ूम और ड्रैग एकदम सही काम करे
               Container(
-                height: 300,
+                height: 320,
                 width: double.infinity,
-                decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2), color: Colors.black),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return InteractiveViewer(
-                      minScale: 1.0,
-                      maxScale: 5.0,
-                      child: GestureDetector(
-                        onPanStart: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        onPanUpdate: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        onTapDown: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.memory(_imageBytes!, fit: BoxFit.contain),
-                            Positioned(
-                              left: (_cropX * constraints.maxWidth) - 20,
-                              top: (_cropY * constraints.maxHeight) - 20,
-                              child: Container(
-                                width: 40, 
-                                height: 40, 
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.yellow, width: 3), 
-                                  color: Colors.yellow.withOpacity(0.3),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 2), 
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRect(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    minScale: 1.0,
+                    maxScale: 5.0,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return GestureDetector(
+                          onPanStart: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          onPanUpdate: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          onTapDown: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(_imageBytes!, fit: BoxFit.contain),
+                              Positioned(
+                                left: (_cropX * constraints.maxWidth) - 20,
+                                top: (_cropY * constraints.maxHeight) - 20,
+                                child: Container(
+                                  width: 40, 
+                                  height: 40, 
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.yellow, width: 3), 
+                                    color: Colors.yellow.withOpacity(0.3),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1428,7 +1438,8 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
         request.fields['brands'] = activeEdgeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        request.fields['category'] = _selectedEdgeCategory;
+        // 👉 सुनिश्चित किया गया है कि सही category बैकएंड को जाए
+        request.fields['category'] = _selectedEdgeCategory.trim().toLowerCase();
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
         var res = await http.Response.fromStream(await request.send());
@@ -1692,55 +1703,64 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
+              // 👉 सुधरा हुआ InteractiveViewer ताकि मोबाइल पर ज़ूम और ड्रैग एकदम सही काम करे
               Container(
-                height: 300,
+                height: 320,
                 width: double.infinity,
-                decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2), color: Colors.black),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return InteractiveViewer(
-                      minScale: 1.0,
-                      maxScale: 5.0,
-                      child: GestureDetector(
-                        onPanStart: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        onPanUpdate: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        onTapDown: (d) {
-                          setState(() {
-                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                          });
-                        },
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.memory(_imageBytes!, fit: BoxFit.contain),
-                            Positioned(
-                              left: (_cropX * constraints.maxWidth) - 20,
-                              top: (_cropY * constraints.maxHeight) - 20,
-                              child: Container(
-                                width: 40, 
-                                height: 40, 
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.yellow, width: 3), 
-                                  color: Colors.yellow.withOpacity(0.3),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 2), 
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRect(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    minScale: 1.0,
+                    maxScale: 5.0,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return GestureDetector(
+                          onPanStart: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          onPanUpdate: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          onTapDown: (d) {
+                            setState(() {
+                              _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                              _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                            });
+                          },
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(_imageBytes!, fit: BoxFit.contain),
+                              Positioned(
+                                left: (_cropX * constraints.maxWidth) - 20,
+                                top: (_cropY * constraints.maxHeight) - 20,
+                                child: Container(
+                                  width: 40, 
+                                  height: 40, 
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.yellow, width: 3), 
+                                    color: Colors.yellow.withOpacity(0.3),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),

@@ -199,7 +199,7 @@ def match_uploaded():
         crop_x = float(request.form.get('crop_x', 0.5))
         crop_y = float(request.form.get('crop_y', 0.5))
         
-        # 👉 Edge Banding के लिए भी Solid/Texture फिल्टर
+        # 👉 Edge Banding के लिए भी Solid/Texture फिल्टर[cite: 4]
         selected_category = request.form.get('category', '').strip().lower()
         
         if 'image' not in request.files:
