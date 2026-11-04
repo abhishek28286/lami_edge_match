@@ -737,6 +737,7 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
   double _cropX = 0.5, _cropY = 0.5;
 
   String _selectedCategory = 'solid';
+  bool _isCrosshairMode = false; // 👉 Mode switch: false = Zoom & Pan, true = Place Crosshair
 
   final ScreenshotController _screenshotController = ScreenshotController();
 
@@ -789,6 +790,7 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
       _imageBytes = bytes;
       _fileName = file.name;
       _matchResults = [];
+      _isCrosshairMode = false;
     });
   }
 
@@ -869,7 +871,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
         request.fields['brands'] = activeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        // 👉 सुनिश्चित किया गया है कि सही category ('solid' या 'texture') बैकएंड को जाए
         request.fields['category'] = _selectedCategory.trim().toLowerCase();
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
@@ -1106,7 +1107,34 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
-              // 👉 सुधरा हुआ InteractiveViewer ताकि मोबाइल पर ज़ूम और ड्रैग एकदम सही काम करे
+              // 👉 TOGGLE BUTTONS FOR ZOOM & CROSSHAIR MODES
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text("🔍 Zoom & Pan Mode", style: TextStyle(fontSize: 11)),
+                      selected: !_isCrosshairMode,
+                      onSelected: (val) => setState(() => _isCrosshairMode = false),
+                      selectedColor: Colors.amber.shade300,
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
+                      label: const Text("🎯 Place Crosshair Mode", style: TextStyle(fontSize: 11)),
+                      selected: _isCrosshairMode,
+                      onSelected: (val) => setState(() => _isCrosshairMode = true),
+                      selectedColor: Colors.amber.shade300,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
               Container(
                 height: 320,
                 width: double.infinity,
@@ -1117,25 +1145,25 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
                 ),
                 child: ClipRect(
                   child: InteractiveViewer(
-                    panEnabled: true,
+                    panEnabled: !_isCrosshairMode, // 👉 Crosshair mode mein image pan disable ho jayegi taaki box aaram se move ho
                     scaleEnabled: true,
                     minScale: 1.0,
                     maxScale: 5.0,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         return GestureDetector(
-                          onPanStart: (d) {
+                          onPanStart: _isCrosshairMode ? (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
                               _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
                             });
-                          },
-                          onPanUpdate: (d) {
+                          } : null,
+                          onPanUpdate: _isCrosshairMode ? (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
                               _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
                             });
-                          },
+                          } : null,
                           onTapDown: (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
@@ -1249,6 +1277,7 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
   final Map<String, bool> _selectedEdgeBrandsMap = {};
 
   String _selectedEdgeCategory = 'solid';
+  bool _isCrosshairMode = false; // 👉 Mode switch for Edge screen too
 
   final ScreenshotController _screenshotController = ScreenshotController();
 
@@ -1336,6 +1365,7 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
       if (imgRes.statusCode == 200 && mounted) {
         setState(() {
           _imageBytes = imgRes.bodyBytes;
+          _isCrosshairMode = false;
         });
       }
     } catch (e) {
@@ -1358,6 +1388,7 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
       _selectedLaminateBrand = null;
       _selectedFilename = null;
       _laminateItems = [];
+      _isCrosshairMode = false;
     });
   }
 
@@ -1438,7 +1469,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
         request.fields['brands'] = activeEdgeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        // 👉 सुनिश्चित किया गया है कि सही category बैकएंड को जाए
         request.fields['category'] = _selectedEdgeCategory.trim().toLowerCase();
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
@@ -1703,7 +1733,34 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
-              // 👉 सुधरा हुआ InteractiveViewer ताकि मोबाइल पर ज़ूम और ड्रैग एकदम सही काम करे
+              // 👉 TOGGLE BUTTONS FOR ZOOM & CROSSHAIR MODES ON EDGE SCREEN
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text("🔍 Zoom & Pan Mode", style: TextStyle(fontSize: 11)),
+                      selected: !_isCrosshairMode,
+                      onSelected: (val) => setState(() => _isCrosshairMode = false),
+                      selectedColor: Colors.amber.shade300,
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
+                      label: const Text("🎯 Place Crosshair Mode", style: TextStyle(fontSize: 11)),
+                      selected: _isCrosshairMode,
+                      onSelected: (val) => setState(() => _isCrosshairMode = true),
+                      selectedColor: Colors.amber.shade300,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
               Container(
                 height: 320,
                 width: double.infinity,
@@ -1714,25 +1771,25 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
                 ),
                 child: ClipRect(
                   child: InteractiveViewer(
-                    panEnabled: true,
+                    panEnabled: !_isCrosshairMode,
                     scaleEnabled: true,
                     minScale: 1.0,
                     maxScale: 5.0,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         return GestureDetector(
-                          onPanStart: (d) {
+                          onPanStart: _isCrosshairMode ? (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
                               _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
                             });
-                          },
-                          onPanUpdate: (d) {
+                          } : null,
+                          onPanUpdate: _isCrosshairMode ? (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
                               _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
                             });
-                          },
+                          } : null,
                           onTapDown: (d) {
                             setState(() {
                               _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
