@@ -55,6 +55,7 @@ class UserProfile {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   bool loggedIn = await UserProfile.loadSession();
 
   try {
@@ -81,7 +82,6 @@ class FlazzorMasterApp extends StatelessWidget {
   }
 }
 
-// Reusable Google AdMob Banner Widget
 class GoogleAdMobBannerWidget extends StatefulWidget {
   const GoogleAdMobBannerWidget({Key? key}) : super(key: key);
 
@@ -142,7 +142,6 @@ class _GoogleAdMobBannerWidgetState extends State<GoogleAdMobBannerWidget> {
   }
 }
 
-// 1. SMART REGISTRATION & AUTH SCREEN
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
 
@@ -271,7 +270,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-// 2. MASTER HOME SCREEN
 class MasterHomeScreen extends StatefulWidget {
   const MasterHomeScreen({Key? key}) : super(key: key);
 
@@ -469,7 +467,6 @@ class _MasterHomeScreenState extends State<MasterHomeScreen> {
   }
 }
 
-// 2.5 CutList WebView Screen with Built-in Share Action Button
 class CutListDirectScreen extends StatefulWidget {
   final String url;
   const CutListDirectScreen({Key? key, required this.url}) : super(key: key);
@@ -499,9 +496,12 @@ class _CutListDirectScreenState extends State<CutListDirectScreen> {
     }
   }
 
-  void _shareCutListReport() {
+  void _triggerShareReport() {
     Share.share(
-      "Check out WoodMat CutList Optimizer Report from Flazzor Interiors, Udaipur!\nAccess the tool here: ${widget.url}",
+      "🪚 **Flazzor WoodMat - CutList Optimizer Report**\n\n"
+      "Udaipur's Best Modular Furniture B2B Solution.\n"
+      "Aapke liye cutting layout aur optimization report taiyar hai. Is link par click karke turant dekhein:\n\n"
+      "${widget.url}",
       subject: "WoodMat CutList Optimizer Report",
     );
   }
@@ -514,9 +514,9 @@ class _CutListDirectScreenState extends State<CutListDirectScreen> {
         title: const Text("WoodMat CutList Optimizer Pro", style: TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            tooltip: "Share CutList Report",
-            onPressed: _shareCutListReport,
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+            tooltip: "Share Report",
+            onPressed: _triggerShareReport,
           ),
         ],
       ),
@@ -531,7 +531,6 @@ class _CutListDirectScreenState extends State<CutListDirectScreen> {
   }
 }
 
-// 2.6 Training Manual Screen
 class TrainingManualScreen extends StatelessWidget {
   const TrainingManualScreen({Key? key}) : super(key: key);
 
@@ -573,7 +572,6 @@ class TrainingManualScreen extends StatelessWidget {
   }
 }
 
-// 2.7 Catalog Request Screen
 class CatalogRequestScreen extends StatefulWidget {
   const CatalogRequestScreen({Key? key}) : super(key: key);
 
@@ -738,6 +736,9 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
   List<dynamic> _matchResults = [];
   double _cropX = 0.5, _cropY = 0.5;
 
+  // 👉 Solid vs Texture Selection for Gallery/Camera Uploads
+  String _selectedCategory = 'solid';
+
   final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
@@ -869,6 +870,8 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
         request.fields['brands'] = activeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
+        // 👉 Pass selected category (solid or texture) to backend
+        request.fields['category'] = _selectedCategory;
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
         var res = await http.Response.fromStream(await request.send());
@@ -1064,6 +1067,37 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             const SizedBox(height: 6),
             const GoogleAdMobBannerWidget(),
             const SizedBox(height: 6),
+            
+            // 👉 Solid / Texture Selection Radio Buttons placed right near Gallery & Camera buttons
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Type: ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Radio<String>(
+                    value: 'solid',
+                    groupValue: _selectedCategory,
+                    onChanged: (val) => setState(() => _selectedCategory = val ?? 'solid'),
+                  ),
+                  const Text("Solid", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 12),
+                  Radio<String>(
+                    value: 'texture',
+                    groupValue: _selectedCategory,
+                    onChanged: (val) => setState(() => _selectedCategory = val ?? 'texture'),
+                  ),
+                  const Text("Texture", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -1200,6 +1234,9 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
 
   List<String> _edgeBrands = [];
   final Map<String, bool> _selectedEdgeBrandsMap = {};
+
+  // 👉 Solid vs Texture Selection for Gallery/Camera Uploads in Edge Screen
+  String _selectedEdgeCategory = 'solid';
 
   final ScreenshotController _screenshotController = ScreenshotController();
 
@@ -1388,6 +1425,8 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
         request.fields['brands'] = activeEdgeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
+        // 👉 Pass category for edge matching as well
+        request.fields['category'] = _selectedEdgeCategory;
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
         var res = await http.Response.fromStream(await request.send());
@@ -1489,7 +1528,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
     );
   }
 
-  // 👉 एज बेंडिंग स्क्रीन का वह गायब हुआ JPG एक्सपोर्ट बटन फंक्शन यहाँ वापस जोड़ दिया गया है
   Future<void> _exportAndShareEdgeJpg() async {
     if (_matchResults.isEmpty) return;
 
@@ -1549,7 +1587,7 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
                     const SizedBox(height: 6),
                     DropdownButton<String>(
                       isExpanded: true,
-                      hint: const Text("Select Laminate Brand (22 Brands)"),
+                      hint: const Text("Select Laminate Brand"),
                       value: _laminateBrands.contains(_selectedLaminateBrand) ? _selectedLaminateBrand : null,
                       items: _laminateBrands.map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13)))).toList(),
                       onChanged: (val) {
@@ -1612,6 +1650,37 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             ],
 
             const SizedBox(height: 12),
+
+            // 👉 Solid / Texture Selection Radio Buttons for Edge Screen
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Type: ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Radio<String>(
+                    value: 'solid',
+                    groupValue: _selectedEdgeCategory,
+                    onChanged: (val) => setState(() => _selectedEdgeCategory = val ?? 'solid'),
+                  ),
+                  const Text("Solid", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 12),
+                  Radio<String>(
+                    value: 'texture',
+                    groupValue: _selectedEdgeCategory,
+                    onChanged: (val) => setState(() => _selectedEdgeCategory = val ?? 'texture'),
+                  ),
+                  const Text("Texture", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -1701,7 +1770,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
               },
             ),
 
-            // 👉 एज बेंडिंग रिजल्ट के नीचे JPG एक्सपोर्ट बटन यहाँ वापस आ गया है
             if (_matchResults.isNotEmpty) ...[
               const SizedBox(height: 10),
               ElevatedButton.icon(
