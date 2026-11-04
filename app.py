@@ -31,7 +31,7 @@ def load_data():
     except Exception as e:
         print(f"Error loading laminates: {e}")
 
-    # 2. Load Edge Swatches (Sabhi keys aur formats ko handle karne ke liye)
+    # 2. Load Edge Swatches
     try:
         if os.path.exists(edge_path):
             with open(edge_path, 'rb') as f:
@@ -43,7 +43,6 @@ def load_data():
                         data.get('items', []) or 
                         data.get('swatches', [])
                     )
-                    # Agar dictionary ke andar koi aur nested list hai toh use bhi extract karein
                     if not loaded_edge_swatches and len(data) > 0:
                         for k, v in data.items():
                             if isinstance(v, list):
@@ -74,7 +73,6 @@ def get_brands():
     try:
         lam_brands = {str(item.get('brand')).strip() for item in loaded_all_laminates if item and item.get('brand')}
         
-        # Edge brands ke liye strict check taaki saare 22 brands capture ho jayein
         edge_brands = set()
         for item in loaded_edge_swatches:
             if item and isinstance(item, dict):
@@ -152,6 +150,9 @@ def match_laminate():
         crop_x = float(request.form.get('crop_x', 0.5))
         crop_y = float(request.form.get('crop_y', 0.5))
         
+        # 👉 Solid या Texture फिल्टर पकड़ने के लिए
+        selected_category = request.form.get('category', '').strip().lower()
+        
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
 
@@ -168,6 +169,12 @@ def match_laminate():
         for lam in loaded_all_laminates:
             if str(lam.get('brand', '')).strip() not in selected_brands:
                 continue
+            
+            # 👉 अगर यूजर ने Solid या Texture चुना है, तो सिर्फ उसी कैटेगरी में ढूंढेगा
+            lam_cat = str(lam.get('category', 'solid')).strip().lower()
+            if selected_category and lam_cat != selected_category:
+                continue
+
             lab_dist = np.linalg.norm(mean_lab - lam['mean_lab'])
             if lab_dist > 140.0:
                 continue
@@ -192,6 +199,9 @@ def match_uploaded():
         crop_x = float(request.form.get('crop_x', 0.5))
         crop_y = float(request.form.get('crop_y', 0.5))
         
+        # 👉 Edge Banding के लिए भी Solid/Texture फिल्टर
+        selected_category = request.form.get('category', '').strip().lower()
+        
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
 
@@ -208,6 +218,11 @@ def match_uploaded():
         for swatch in loaded_edge_swatches:
             if str(swatch.get('brand', '')).strip() not in selected_brands:
                 continue
+            
+            swatch_cat = str(swatch.get('category', 'solid')).strip().lower()
+            if selected_category and swatch_cat != selected_category:
+                continue
+
             lab_dist = np.linalg.norm(mean_lab - swatch['mean_lab'])
             if lab_dist > 120.0:
                 continue
