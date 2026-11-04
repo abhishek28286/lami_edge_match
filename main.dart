@@ -1105,7 +1105,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
-              // 👉 Fit to box container with InteractiveViewer for Zoom/Pan and correct aspect ratio support
               Container(
                 height: 300,
                 width: double.infinity,
@@ -1693,7 +1692,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
-              // 👉 Fit to box container with InteractiveViewer for Zoom/Pan and correct aspect ratio support
               Container(
                 height: 300,
                 width: double.infinity,
