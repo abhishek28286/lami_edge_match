@@ -736,7 +736,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
   List<dynamic> _matchResults = [];
   double _cropX = 0.5, _cropY = 0.5;
 
-  // 👉 Solid vs Texture Selection for Gallery/Camera Uploads
   String _selectedCategory = 'solid';
 
   final ScreenshotController _screenshotController = ScreenshotController();
@@ -870,7 +869,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
         request.fields['brands'] = activeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        // 👉 Pass selected category (solid or texture) to backend
         request.fields['category'] = _selectedCategory;
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
@@ -938,8 +936,9 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             String brand = (item is Map ? item['brand'] : '') ?? '';
             String category = (item is Map ? item['category'] : 'solid') ?? 'solid';
             String filename = (item is Map ? item['filename'] : '') ?? '';
+            String actualFileName = filename.contains('/') ? filename.split('/').last : filename;
             String itemName = (item is Map ? item['name'] : '') ?? '';
-            String thumbUrl = '$baseUrl/laminate/$brand/$category/$filename';
+            String thumbUrl = '$baseUrl/laminate/$brand/$category/$actualFileName';
 
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 3),
@@ -1068,7 +1067,6 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             const GoogleAdMobBannerWidget(),
             const SizedBox(height: 6),
             
-            // 👉 Solid / Texture Selection Radio Buttons placed right near Gallery & Camera buttons
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               decoration: BoxDecoration(
@@ -1107,48 +1105,53 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
+              // 👉 Fit to box container with InteractiveViewer for Zoom/Pan and correct aspect ratio support
               Container(
-                height: 250,
+                height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2), color: Colors.black),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    return GestureDetector(
-                      onPanStart: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      onPanUpdate: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      onTapDown: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.memory(_imageBytes!, fit: BoxFit.contain),
-                          Positioned(
-                            left: (_cropX * constraints.maxWidth) - 20,
-                            top: (_cropY * constraints.maxHeight) - 20,
-                            child: Container(
-                              width: 40, 
-                              height: 40, 
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.yellow, width: 3), 
-                                color: Colors.yellow.withOpacity(0.3),
+                    return InteractiveViewer(
+                      minScale: 1.0,
+                      maxScale: 5.0,
+                      child: GestureDetector(
+                        onPanStart: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        onPanUpdate: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        onTapDown: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.memory(_imageBytes!, fit: BoxFit.contain),
+                            Positioned(
+                              left: (_cropX * constraints.maxWidth) - 20,
+                              top: (_cropY * constraints.maxHeight) - 20,
+                              child: Container(
+                                width: 40, 
+                                height: 40, 
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.yellow, width: 3), 
+                                  color: Colors.yellow.withOpacity(0.3),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -1174,8 +1177,9 @@ class _LaminateMatchingScreenState extends State<LaminateMatchingScreen> {
                 String brand = (item is Map ? item['brand'] : '') ?? '';
                 String category = (item is Map ? item['category'] : 'solid') ?? 'solid';
                 String filename = (item is Map ? item['filename'] : '') ?? '';
+                String actualFileName = filename.contains('/') ? filename.split('/').last : filename;
                 String itemName = (item is Map ? item['name'] : '') ?? '';
-                String thumbUrl = '$baseUrl/laminate/$brand/$category/$filename';
+                String thumbUrl = '$baseUrl/laminate/$brand/$category/$actualFileName';
                 return Card(
                   child: ListTile(
                     leading: Image.network(thumbUrl, width: 45, height: 45, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image, color: Colors.grey)),
@@ -1235,7 +1239,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
   List<String> _edgeBrands = [];
   final Map<String, bool> _selectedEdgeBrandsMap = {};
 
-  // 👉 Solid vs Texture Selection for Gallery/Camera Uploads in Edge Screen
   String _selectedEdgeCategory = 'solid';
 
   final ScreenshotController _screenshotController = ScreenshotController();
@@ -1318,7 +1321,8 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
     });
 
     try {
-      var imgUrl = '$baseUrl/laminate/${Uri.encodeComponent(_selectedLaminateBrand!)}/${Uri.encodeComponent(itemCategory)}/${Uri.encodeComponent(filename)}';
+      String actualFileName = filename.contains('/') ? filename.split('/').last : filename;
+      var imgUrl = '$baseUrl/laminate/${Uri.encodeComponent(_selectedLaminateBrand!)}/${Uri.encodeComponent(itemCategory)}/${Uri.encodeComponent(actualFileName)}';
       var imgRes = await http.get(Uri.parse(imgUrl));
       if (imgRes.statusCode == 200 && mounted) {
         setState(() {
@@ -1425,7 +1429,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
         request.fields['brands'] = activeEdgeBrands.join(',');
         request.fields['crop_x'] = _cropX.toString();
         request.fields['crop_y'] = _cropY.toString();
-        // 👉 Pass category for edge matching as well
         request.fields['category'] = _selectedEdgeCategory;
         request.files.add(http.MultipartFile.fromBytes('image', _imageBytes!, filename: _fileName.isNotEmpty ? _fileName : 'upload.jpg'));
 
@@ -1494,8 +1497,9 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             String brand = (item is Map ? item['brand'] : '') ?? '';
             String category = (item is Map ? item['category'] : 'solid') ?? 'solid';
             String filename = (item is Map ? item['filename'] : '') ?? '';
+            String actualFileName = filename.contains('/') ? filename.split('/').last : filename;
             String itemName = (item is Map ? item['name'] : '') ?? '';
-            String edgeThumbUrl = '$baseUrl/edge/$brand/$category/$filename';
+            String edgeThumbUrl = '$baseUrl/edge/$brand/$category/$actualFileName';
 
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 3),
@@ -1651,7 +1655,6 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
 
             const SizedBox(height: 12),
 
-            // 👉 Solid / Texture Selection Radio Buttons for Edge Screen
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               decoration: BoxDecoration(
@@ -1690,48 +1693,53 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
             ),
             const SizedBox(height: 12),
             if (_imageBytes != null) ...[
+              // 👉 Fit to box container with InteractiveViewer for Zoom/Pan and correct aspect ratio support
               Container(
-                height: 250,
+                height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2), color: Colors.black),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    return GestureDetector(
-                      onPanStart: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      onPanUpdate: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      onTapDown: (d) {
-                        setState(() {
-                          _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
-                        });
-                      },
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.memory(_imageBytes!, fit: BoxFit.contain),
-                          Positioned(
-                            left: (_cropX * constraints.maxWidth) - 20,
-                            top: (_cropY * constraints.maxHeight) - 20,
-                            child: Container(
-                              width: 40, 
-                              height: 40, 
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.yellow, width: 3), 
-                                color: Colors.yellow.withOpacity(0.3),
+                    return InteractiveViewer(
+                      minScale: 1.0,
+                      maxScale: 5.0,
+                      child: GestureDetector(
+                        onPanStart: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        onPanUpdate: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        onTapDown: (d) {
+                          setState(() {
+                            _cropX = (d.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+                            _cropY = (d.localPosition.dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          });
+                        },
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.memory(_imageBytes!, fit: BoxFit.contain),
+                            Positioned(
+                              left: (_cropX * constraints.maxWidth) - 20,
+                              top: (_cropY * constraints.maxHeight) - 20,
+                              child: Container(
+                                width: 40, 
+                                height: 40, 
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.yellow, width: 3), 
+                                  color: Colors.yellow.withOpacity(0.3),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -1757,8 +1765,9 @@ class _EdgeBandingScreenState extends State<EdgeBandingScreen> {
                 String brand = (item is Map ? item['brand'] : '') ?? '';
                 String category = (item is Map ? item['category'] : 'solid') ?? 'solid';
                 String filename = (item is Map ? item['filename'] : '') ?? '';
+                String actualFileName = filename.contains('/') ? filename.split('/').last : filename;
                 String itemName = (item is Map ? item['name'] : '') ?? '';
-                String edgeThumbUrl = '$baseUrl/edge/$brand/$category/$filename';
+                String edgeThumbUrl = '$baseUrl/edge/$brand/$category/$actualFileName';
                 return Card(
                   child: ListTile(
                     leading: Image.network(edgeThumbUrl, width: 45, height: 45, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image, color: Colors.grey)),
