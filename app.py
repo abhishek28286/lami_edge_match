@@ -152,6 +152,7 @@ def match_laminate():
         
         # 👉 Solid या Texture फिल्टर पकड़ने के लिए
         selected_category = request.form.get('category', '').strip().lower()
+        print(f"DEBUG [Laminate Match]: User selected category -> [{selected_category}] | Brands -> {selected_brands}")
         
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
@@ -170,8 +171,11 @@ def match_laminate():
             if str(lam.get('brand', '')).strip() not in selected_brands:
                 continue
             
-            # 👉 अगर यूजर ने Solid या Texture चुना है, तो सिर्फ उसी कैटेगरी में ढूंढेगा
             lam_cat = str(lam.get('category', 'solid')).strip().lower()
+            
+            # 👉 चेक करने के लिए प्रिंट
+            # print(f"DEBUG [Laminate]: Item {lam.get('name')} category in DB is [{lam_cat}]")
+
             if selected_category and lam_cat != selected_category:
                 continue
 
@@ -187,8 +191,10 @@ def match_laminate():
             })
 
         results = sorted(results, key=lambda x: x['score'], reverse=True)[:5]
+        print(f"DEBUG [Laminate Match]: Returning {len(results)} matches.")
         return jsonify({'matches': results}), 200
     except Exception as e:
+        print(f"Error in match_laminate: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/match', methods=['POST'])
@@ -199,8 +205,9 @@ def match_uploaded():
         crop_x = float(request.form.get('crop_x', 0.5))
         crop_y = float(request.form.get('crop_y', 0.5))
         
-        # 👉 Edge Banding के लिए भी Solid/Texture फिल्टर[cite: 4]
+        # 👉 Edge Banding के लिए भी Solid/Texture फिल्टर
         selected_category = request.form.get('category', '').strip().lower()
+        print(f"DEBUG [Edge Match]: User selected category -> [{selected_category}] | Brands -> {selected_brands}")
         
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
@@ -220,6 +227,7 @@ def match_uploaded():
                 continue
             
             swatch_cat = str(swatch.get('category', 'solid')).strip().lower()
+            
             if selected_category and swatch_cat != selected_category:
                 continue
 
@@ -235,8 +243,10 @@ def match_uploaded():
             })
 
         results = sorted(results, key=lambda x: x['score'], reverse=True)[:5]
+        print(f"DEBUG [Edge Match]: Returning {len(results)} matches.")
         return jsonify({'matches': results}), 200
     except Exception as e:
+        print(f"Error in match_uploaded: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
